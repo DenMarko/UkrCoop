@@ -26,7 +26,7 @@ void CHookEvent::HookEvent(const char *EventName, hookFunck FunckName)
 
 	EventHooks info;
 	info.name = EventName;
-	info.func = FunckName;
+	info.func = &FunckName;
 
 	m_EventHook.push_back(info);
 }
@@ -45,8 +45,8 @@ bool CHookEvent::OnFireEvent(IGameEvent *pEvent, bool bDontBroatcast)
 		info = &(*iter);
 		if (strcmp(name, info->name) == 0)
 		{
-			g_IUkrCoop->UkrCoop_LogMessage("[UkrPerks] Event is hook: %s", name);
-			info->func(pEvent, bDontBroatcast);
+//			g_IUkrCoop->UkrCoop_LogMessage("[UkrPerks] Event is hook: %s", name);
+			(pPerks->*(*info->func))(pEvent, bDontBroatcast);
 		}
 		iter++;
 	}

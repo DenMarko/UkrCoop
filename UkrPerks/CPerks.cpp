@@ -1,28 +1,37 @@
 #include "CPerks.h"
 
+CPerks *pPerks = new CPerks();
+
+constexpr auto MAX_UPGRADES = 19;
+
+ConVar *pUpgradeEnable[MAX_UPGRADES] = { nullptr };
+ConVar *pEnable = new ConVar("ukr_enable_perks", "1", FCVAR_NONE, "1 enable perks, 0 disable perks", true, 0, true, 1);
+
+
+
 CPerks::CPerks() : msg_Id(usermsgs->GetMessageIndex("SayText"))
 {
 	usermsgs->HookUserMessage2(msg_Id, this, false);
 
-	g_pHookEvent.HookEvent("survivor_rescued",		this->event_Rescued);
-	g_pHookEvent.HookEvent("tank_killed",			this->event_TankKilled);
-	g_pHookEvent.HookEvent("player_jump",			this->event_PlayerJump);
-	g_pHookEvent.HookEvent("round_start",			this->round_start);
-	g_pHookEvent.HookEvent("award_earned",			this->event_AwardEarned);
-	g_pHookEvent.HookEvent("player_death",			this->event_PlayerDeath);
-	g_pHookEvent.HookEvent("infected_hurt",			this->Event_InfectedHurt);
-	g_pHookEvent.HookEvent("player_hurt",			this->Event_PlayerHurt);
-	g_pHookEvent.HookEvent("witch_killed",			this->Event_WitchKilled);
-	g_pHookEvent.HookEvent("player_incapacitated",	this->Event_PlayerIncaped);
-	g_pHookEvent.HookEvent("heal_success",			this->event_HealSuccess);
-	g_pHookEvent.HookEvent("round_end",				this->round_end);
-	g_pHookEvent.HookEvent("map_transition",		this->round_end);
-	g_pHookEvent.HookEvent("player_use",			this->event_PlayerUse);
-	g_pHookEvent.HookEvent("ammo_pickup",			this->event_AmmoPickup);
-	g_pHookEvent.HookEvent("item_pickup",			this->event_ItemPickup);
-	g_pHookEvent.HookEvent("player_spawn",			this->event_PlayerSpawn);
-	g_pHookEvent.HookEvent("weapon_fire",			this->Event_WeaponFire);
-	g_pHookEvent.HookEvent("bullet_impact",			this->Event_BulletImpact);
+	g_pHookEvent.HookEvent("survivor_rescued", &CPerks::event_Rescued);
+	g_pHookEvent.HookEvent("tank_killed", &CPerks::event_TankKilled);
+	g_pHookEvent.HookEvent("player_jump", &CPerks::event_PlayerJump);
+	g_pHookEvent.HookEvent("round_start", &CPerks::round_start);
+	g_pHookEvent.HookEvent("award_earned", &CPerks::event_AwardEarned);
+	g_pHookEvent.HookEvent("player_death", &CPerks::event_PlayerDeath);
+	g_pHookEvent.HookEvent("infected_hurt", &CPerks::Event_InfectedHurt);
+	g_pHookEvent.HookEvent("player_hurt", &CPerks::Event_PlayerHurt);
+	g_pHookEvent.HookEvent("witch_killed", &CPerks::Event_WitchKilled);
+	g_pHookEvent.HookEvent("player_incapacitated", &CPerks::Event_PlayerIncaped);
+	g_pHookEvent.HookEvent("heal_success", &CPerks::event_HealSuccess);
+	g_pHookEvent.HookEvent("round_end", &CPerks::round_end);
+	g_pHookEvent.HookEvent("map_transition", &CPerks::round_end);
+	g_pHookEvent.HookEvent("player_use", &CPerks::event_PlayerUse);
+	g_pHookEvent.HookEvent("ammo_pickup", &CPerks::event_AmmoPickup);
+	g_pHookEvent.HookEvent("item_pickup", &CPerks::event_ItemPickup);
+	g_pHookEvent.HookEvent("player_spawn", &CPerks::event_PlayerSpawn);
+	g_pHookEvent.HookEvent("weapon_fire", &CPerks::Event_WeaponFire);
+	g_pHookEvent.HookEvent("bullet_impact", &CPerks::Event_BulletImpact);
 
 }
 

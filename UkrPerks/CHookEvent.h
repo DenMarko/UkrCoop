@@ -5,17 +5,12 @@
 #pragma once
 #endif //_WIN32
 
-#include "extension.h"
-#include "igameevents.h"
-
-typedef bool(_cdecl *hookFunck)(
-	IGameEvent *pEvent,
-	bool bDontBroatcast);
+#include "CPerks.h"
 
 struct EventHooks
 {
 	const char *name;
-	hookFunck func;
+	hookFunck *func;
 };
 
 class CHookEvent

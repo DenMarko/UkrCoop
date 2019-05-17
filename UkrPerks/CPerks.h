@@ -58,4 +58,7 @@ public:
 	bool Event_BulletImpact(IGameEvent *pEvent, bool bDontBroatcast);
 };
 
+typedef bool(CPerks::*hookFunck)(IGameEvent *pEvent, bool bDontBroatcast);
+extern CPerks *pPerks;
+
 #endif //HEDER_FILE_PERKS

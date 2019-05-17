@@ -41,15 +41,13 @@
 #include "sourcehook/sh_list.h"
 #include "F:\source\Projects\UkrCoop\UkrCoop\Interface\IUkrCoop.h"
 #include "CHookEvent.h"
-
-extern SourceMod::UkrCoop	*g_IUkrCoop;
+#include "igameevents.h"
 
 /**
  * @brief Sample implementation of the SDK Extension.
  * Note: Uncomment one of the pre-defined virtual functions in order to use it.
  */
-class Sample : public SDKExtension,
-	public IConCommandBaseAccessor
+class Sample : public SDKExtension, public IConCommandBaseAccessor
 {
 public:
 	virtual bool SDK_OnLoad(char *error, size_t maxlength, bool late);
@@ -69,5 +67,8 @@ public: //IConCommandBaseAccessor
 public:
 	bool Translate(char *buffer, size_t maxlength, const char *format, unsigned int numparams, size_t *pOutLength, ...);
 };
+
+extern SourceMod::UkrCoop	*g_IUkrCoop;
+extern ICvar				*icvar;
 
 #endif // _INCLUDE_SOURCEMOD_EXTENSION_PROPER_H_
