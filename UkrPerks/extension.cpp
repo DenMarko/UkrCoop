@@ -40,11 +40,14 @@
 Sample				g_Sample;		/**< Global singleton for extension's main interface */
 ICvar				*icvar = nullptr;
 IGameEventManager2	*gameevents = nullptr;
+IServerGameClients	*serverClients = nullptr;
 SourceMod::UkrCoop	*g_IUkrCoop = nullptr;
 IPhraseCollection	*ipharases = nullptr;
+CPerks				*pPerks = nullptr;
 
 
 SH_DECL_HOOK2(IGameEventManager2, FireEvent, SH_NOATTRIB, false, bool, IGameEvent *, bool);
+SH_DECL_HOOK2_void(IServerGameClients, ClientPutInServer, SH_NOATTRIB, 0, edict_t *, const char *);
 
 SMEXT_LINK(&g_Sample);
 
@@ -61,6 +64,7 @@ bool Sample::SDK_OnLoad(char * error, size_t maxlen, bool late)
 	ipharases->AddPhraseFile("perks.phrases");
 	ipharases->AddPhraseFile("common.pharases");
 
+	pPerks = new CPerks();
 
 	return true;
 }
@@ -98,11 +102,13 @@ bool Sample::SDK_OnMetamodLoad(ISmmAPI * ismm, char * error, size_t maxlen, bool
 {
 	GET_V_IFACE_CURRENT(GetEngineFactory, icvar, ICvar, CVAR_INTERFACE_VERSION);
 	GET_V_IFACE_CURRENT(GetEngineFactory, gameevents, IGameEventManager2, INTERFACEVERSION_GAMEEVENTSMANAGER2);
+	GET_V_IFACE_CURRENT(GetServerFactory, serverClients, IServerGameClients, INTERFACEVERSION_SERVERGAMECLIENTS);
 
 	g_pCVar = icvar;
 	ConVar_Register(0, this);
 
 	SH_ADD_HOOK(IGameEventManager2, FireEvent, gameevents, SH_MEMBER(&g_pHookEvent, &CHookEvent::OnFireEvent), false);
+	SH_ADD_HOOK(IServerGameClients, ClientPutInServer, serverClients, SH_MEMBER(this, &CPerks::OnClientPutInServer), true);
 
 	return true;
 }
@@ -110,6 +116,7 @@ bool Sample::SDK_OnMetamodLoad(ISmmAPI * ismm, char * error, size_t maxlen, bool
 bool Sample::SDK_OnMetamodUnload(char * error, size_t maxlen)
 {
 	SH_REMOVE_HOOK(IGameEventManager2, FireEvent, gameevents, SH_MEMBER(&g_pHookEvent, &CHookEvent::OnFireEvent), false);
+	SH_REMOVE_HOOK(IServerGameClients, ClientPutInServer, serverClients, SH_MEMBER(this, &CPerks::OnClientPutInServer), true);
 
 
 	return true;
@@ -123,38 +130,4 @@ bool Sample::SDK_OnMetamodPauseChange(bool paused, char * error, size_t maxlen)
 bool Sample::RegisterConCommandBase(ConCommandBase * pVar)
 {
 	return META_REGCVAR(pVar);
-}
-
-bool Sample::Translate(char *buffer, size_t maxlength, const char *format, unsigned int numparams, size_t *pOutLength, ...)
-{
-	va_list ap;
-	unsigned int i;
-	const char *fail_phrase;
-	void *params[MAX_TRANSLATE_PARAMS];
-
-	if (numparams > MAX_TRANSLATE_PARAMS)
-	{
-		assert(false);
-		return false;
-	}
-
-	va_start(ap, pOutLength);
-	for (i = 0; i < numparams; i++)
-	{
-		params[i] = va_arg(ap, void *);
-	}
-	va_end(ap);
-
-	if (!ipharases->FormatString(buffer, maxlength, format, params, numparams, pOutLength, &fail_phrase))
-	{
-		if (fail_phrase != NULL)
-		{
-			g_pSM->LogError(myself, "[UkrCoop] Could not find core phrase: %s", fail_phrase);
-		}
-		else {
-			g_pSM->LogError(myself, "[UkrCoop] Unknown fatal error while translating a core phrase.");
-		}
-		return false;
-	}
-	return true;
 }

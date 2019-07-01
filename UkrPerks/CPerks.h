@@ -30,6 +30,8 @@ enum UPGRADES
 class CPerks : public Sample,
 	public IBitBufUserMessageListener
 {
+	IDBDriver *driver;
+	IDatabase *db;
 	int msg_Id;
 public:
 	CPerks();
@@ -37,6 +39,7 @@ public:
 public:
 	void OnUserMessage(int msg_id, bf_write *bf, IRecipientFilter *pFilter);
 	void OnUserMessageSent(int msg_id);
+	void LoadData(IGamePlayer *player);
 public:
 	bool event_Rescued(IGameEvent *pEvent, bool bDontBroatcast);
 	bool event_TankKilled(IGameEvent *pEvent, bool bDontBroatcast);
@@ -56,6 +59,16 @@ public:
 	bool event_PlayerSpawn(IGameEvent *pEvent, bool bDontBroatcast);
 	bool Event_WeaponFire(IGameEvent *pEvent, bool bDontBroatcast);
 	bool Event_BulletImpact(IGameEvent *pEvent, bool bDontBroatcast);
+
+public:
+	void OnClientPutInServer(edict_t *pEntity, const char *playername);
+
+private:
+	void SaveData(IGamePlayer *player);
+	unsigned long SetUpgradeBitVec(int client);
+	int GetSurvivorUpgrades(int client);
+	int GetAbSurvivorUpgrades(int client);
+	int MissingSurvivorUpgrades(int client);
 };
 
 typedef bool(CPerks::*hookFunck)(IGameEvent *pEvent, bool bDontBroatcast);

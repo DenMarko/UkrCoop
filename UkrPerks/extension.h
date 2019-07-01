@@ -64,11 +64,11 @@ public:
 #endif
 public: //IConCommandBaseAccessor
 	virtual bool RegisterConCommandBase(ConCommandBase *pVar);
-public:
-	bool Translate(char *buffer, size_t maxlength, const char *format, unsigned int numparams, size_t *pOutLength, ...);
 };
 
 extern SourceMod::UkrCoop	*g_IUkrCoop;
 extern ICvar				*icvar;
+extern IPhraseCollection	*ipharases;
+
 
 #endif // _INCLUDE_SOURCEMOD_EXTENSION_PROPER_H_
