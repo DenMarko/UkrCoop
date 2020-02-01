@@ -37,7 +37,7 @@ namespace SourceMod
 		 *	*******Повідомлення для ігрока*******
 		 *	@brief виводить повідомлення в чаті кліента
 		 */
-		virtual bool UkrCoop_PlayerMsg(int client, DEST type, const char *msg, ...) = 0;
+		virtual void UkrCoop_PlayerMsg(int client, DEST type, const char *msg, ...) = 0;
 		/**
 		 *	*******Лог менеджер*******
 		 *	@brief Добавляем повідомлення в файл лога

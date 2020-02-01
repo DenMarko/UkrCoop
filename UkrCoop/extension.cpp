@@ -7,6 +7,8 @@
 #include "log_messege.h"
 #include "HookEvent.h"
 
+#define MAXMSGLEN 256
+
 CHookEvent		g_pHookEvent;
 LM				m_sLog;
 chat_log		m_sChatLog;
@@ -111,7 +113,7 @@ public:
 								g_pUkrCoop.PEntityOfEntIndex(target)->GetUnknown()->GetBaseEntity(),
 								sVector);
 	}
-	virtual bool UkrCoop_PlayerMsg(int client, DEST type, const char *msg, ...)
+	virtual void UkrCoop_PlayerMsg(int client, DEST type, const char *msg, ...)
 	{
 		char buffer[2048];
 		va_list ap;
@@ -194,7 +196,7 @@ class Timers : public ITimedEvent
 			return Pl_Continue;
 		}
 
-		char msg[256];
+		char msg[MAXMSGLEN - 1];
 		g_HL2.Translate(msg, sizeof(msg), "%T", 2, NULL, "Visit_grup", &client);
 		g_HL2.TextMsg(client, DEST::CHAT, msg);
 
@@ -338,22 +340,26 @@ bool Ukr_coop::SetupHooks(void)
 	CDetourManager::Init(g_pSM->GetScriptingEngine(), g_pGameConf);
 
 	g_pWintchAttackCreater = DETOUR_CREATE_MEMBER(WitchAttack__WitchAttack, "WitchAttack::WitchAttack");
-	g_pWintchAttackGetVictim = DETOUR_CREATE_MEMBER(WitchAttack__GetVictim, "WitchAttack::GetVictim");
 	if (g_pWintchAttackCreater)
 	{
 		g_pWintchAttackCreater->EnableDetour();
-		return true;
+	} else {
+		g_pSM->LogError(myself, "Cannot find signature of \"WitchAttack::WitchAttack\"");
+		RemoveHooks();
+		return false;
 	}
 
+	g_pWintchAttackGetVictim = DETOUR_CREATE_MEMBER(WitchAttack__GetVictim, "WitchAttack::GetVictim");
 	if (g_pWintchAttackGetVictim)
 	{
 		g_pWintchAttackGetVictim->EnableDetour();
-		return true;
+	} else {
+		g_pSM->LogError(myself, "Cannot find signature of \"WitchAttack::GetVictim\"");
+		RemoveHooks();
+		return false;
 	}
 
-	g_pSM->LogError(myself, "Cannot find signature of WitchAttack::WitchAttack");
-	RemoveHooks();
-	return false;
+	return true;
 }
 
 void Ukr_coop::RemoveHooks(void)
@@ -375,23 +381,6 @@ bool Ukr_coop::OnLevelInit(char const *pMapName, char const *pMapEntities, char 
 	this->OnMapStart(pMapName);
 	RETURN_META_VALUE(MRES_IGNORED, true);
 }
-
-//unsigned int strncopy(char *dest, const char *src, size_t count)
-//{
-//	if (!count)
-//	{
-//		return 0;
-//	}
-//
-//	char *start = dest;
-//	while ((*src) && (--count))
-//	{
-//		*dest++ = *src++;
-//	}
-//	*dest = '\0';
-//
-//	return (dest - start);
-//}
 
 bool Ukr_coop::OnClientConnect(edict_t *pEntity, const char *pszName, const char *pszAddress, char *reject, int maxrejectlen)
 {
@@ -501,7 +490,6 @@ void Ukr_coop::OnSayTeamChat(const CCommand &args)
 void Ukr_coop::OnSayChat(const CCommand &args)
 {
 	int client = g_pUkrCoop.GetComandsClient();
-	
 	const char* argss = args.ArgS();
 	if(!argss)
 		RETURN_META(MRES_IGNORED);
@@ -520,7 +508,7 @@ Resultat Ukr_coop::ClientOnSayChat(const char* msg, const int client, const bool
 	}
 	
 	IGamePlayer* pPlayer = playerhelpers->GetGamePlayer(client);
-	if(!pPlayer){
+	if(!pPlayer || !pPlayer->IsConnected()){
 		return PL_Continue;
 	}
 

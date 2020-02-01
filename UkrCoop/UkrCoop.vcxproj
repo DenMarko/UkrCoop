@@ -78,7 +78,7 @@
       <Optimization>MaxSpeed</Optimization>
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;UKRCOOP_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>F:\source\Projects\UkrCoop\UkrCoop;F:\source\Proect\mmsource\core\sourcehook;F:\source\Proect\mmsource\core;F:\source\Proect\hl2sdk-l4d\public\tier1;F:\source\Proect\hl2sdk-l4d\public\tier0;F:\source\Proect\hl2sdk-l4d\public\game\server;F:\source\Proect\hl2sdk-l4d\public\engine;F:\source\Proect\hl2sdk-l4d\public;F:\source\Proect\sourcemod_1.7\public\sourcepawn;F:\source\Proect\sourcemod_1.7\public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>F:\source\Projects\UkrCoop\UkrCoop;F:\source\Proect\mmsource\core\sourcehook;F:\source\Proect\mmsource\core;F:\source\Proect\hl2sdk-l4d\public\tier1;F:\source\Proect\hl2sdk-l4d\public\tier0;F:\source\Proect\hl2sdk-l4d\public\game\server;F:\source\Proect\hl2sdk-l4d\public\engine;F:\source\Proect\hl2sdk-l4d\public;F:\source\Proect\sourcemod-2896435739b4402e182415d46ba75e7d1cf35963\sourcepawn;F:\source\Proect\sourcemod-2896435739b4402e182415d46ba75e7d1cf35963\public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <AdditionalOptions>/D SE_EPISODEONE=1 /D SE_DARKMESSIAH=2 /D SE_ORANGEBOX=3 /D SE_BLOODYGOODTIME=4 /D SE_EYE=5 /D SE_CSS=6 /D SE_HL2DM=7 /D SE_DODS=8 /D SE_TF2=9 /D SE_LEFT4DEAD=10 /D SE_NUCLEARDAWN=11 /D SE_LEFT4DEAD2=12 /D SE_ALIENSWARM=13 /D SE_PORTAL2=14 /D SE_CSGO=15 /D SE_DOTA=16</AdditionalOptions>

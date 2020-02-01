@@ -40,7 +40,7 @@
 /* Basic information exposed publicly */
 #define SMEXT_CONF_NAME			"UkrCoop"
 #define SMEXT_CONF_DESCRIPTION	"Official extension server!"
-#define SMEXT_CONF_VERSION		bulit_number_char()
+#define SMEXT_CONF_VERSION		bulit_version_number_char()
 #define SMEXT_CONF_AUTHOR		"Den Marko"
 #define SMEXT_CONF_URL			"http://www.sourcemod.net/"
 #define SMEXT_CONF_LOGTAG		"UkrCoop"

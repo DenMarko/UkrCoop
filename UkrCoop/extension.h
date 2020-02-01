@@ -182,12 +182,11 @@ public:
 		strftime(date, len, "%H:%M:%S", &curtime);
 		return curtime;
 	}
-	tm GetCurDate()
+	void GetCurDate(tm *curtime)
 	{
 		time_t t = time(NULL);
-		tm curtime;
-		localtime_s(&curtime, &t);
-		return curtime;
+		localtime_s(curtime, &t);
+		return;
 	}
 
 public:

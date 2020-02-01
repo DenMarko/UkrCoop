@@ -1,7 +1,7 @@
 #include "bulitnum.h"
 #include "extension.h"
 
-char *data = __DATE__;
+char data[] = __DATE__;
 
 char *mon[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 char mond[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
@@ -33,6 +33,7 @@ CBulitNumber::CBulitNumber(void)
 {
 	this->ComputeBulitNumber();
 	g_pUkrCoop.UTIL_Format(c_nBuletNum, sizeof(c_nBuletNum), "%i", this->m_nBulitNum);
+	g_pUkrCoop.UTIL_Format(c_nVersionBulitNum, sizeof(c_nVersionBulitNum), "1.1.30 (Assembly %i)", this->m_nBulitNum);
 }
 
 int CBulitNumber::GetBulitNum(void)
@@ -40,7 +41,12 @@ int CBulitNumber::GetBulitNum(void)
 	return m_nBulitNum;
 }
 
-const char *CBulitNumber::GetBuletNum(void)
+const char *CBulitNumber::GetBuletVersionNum(void)
+{
+	return c_nVersionBulitNum;
+}
+
+const char *CBulitNumber::GetBulitsNum()
 {
 	return c_nBuletNum;
 }
@@ -77,7 +83,12 @@ int bulit_number(void)
 {
 	return cBulNum.GetBulitNum();
 }
+const char *bulit_version_number_char(void)
+{
+	return cBulNum.GetBuletVersionNum();
+}
+
 const char *bulit_number_char(void)
 {
-	return cBulNum.GetBuletNum();
+	return cBulNum.GetBulitsNum();
 }
