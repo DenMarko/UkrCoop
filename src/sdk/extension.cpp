@@ -289,20 +289,6 @@ DETOUR_DECL_MEMBER1(OnGSClientDeny, void, GSClientDeny_t *, pGSClientDeny)
 	return DETOUR_MEMBER_CALL1(OnGSClientDeny, pGSClientDeny);
 }
 
-// void OnNextFrame(void *data)
-// {
-// 	CellArray* g_pArray = reinterpret_cast<CellArray *>(data);
-
-// 	int ilen = g_pArray->size();
-// 	for(int i = 0; i < ilen; i++)
-// 	{
-// 		g_Sample.InsertCommands((const char*)g_pArray->at(i));
-// 		engine->ServerExecute();
-// 	}
-// 	g_pArray->clear();
-// 	delete g_pArray;
-// }
-
 DETOUR_DECL_MEMBER3(CCommandBuffer__InsertCommand, bool, const char*, pArgs, int, nCommandSize, int, nTick)
 {
 	auto result = DETOUR_MEMBER_CALL1(CCommandBuffer__InsertCommand, pArgs, nCommandSize, nTick);

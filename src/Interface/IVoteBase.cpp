@@ -123,7 +123,7 @@ void IBaseIssue::OnVotePassed(void)
 
 void IBaseIssue::OnVoteFailed(void)
 {
-	ConVarRef VoteFailureRef("sv_vote_failure_timer");
+	static ConVarRef VoteFailureRef("sv_vote_failure_timer");
     for(int index = 0; index < m_FailedVotes.Count(); index++)
     {
         FailedVote *pFailedVote = m_FailedVotes[index];
