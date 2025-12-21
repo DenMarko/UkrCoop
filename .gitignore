@@ -1,2 +1,33 @@
-.vscode/
+# Залежності
+node_modules/
+vendor/
+package-lock.json
+
+# Змінні середовища (паролі, ключі API)
+.env
+.env.local
+.env.*.local
+
+# Папки збірки
+dist/
 build/
+out/
+
+# Логи
+*.log
+npm-debug.log*
+yarn-debug.log*
+
+# IDE налаштування
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Системні файли
+.DS_Store
+Thumbs.db
+
+# Тимчасові файли
+*.tmp
+*.cache
