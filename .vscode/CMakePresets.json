@@ -1,0 +1,31 @@
+{
+    "version": 3,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 19,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "release",
+            "displayName": "Release build",
+            "generator": "Unix Makefiles",
+            "description": "Release build with optimizations",
+            "hidden": false,
+            "cacheVariables": {
+            "CMAKE_BUILD_TYPE": "Release",
+            "CMAKE_C_COMPILER": "/usr/bin/gcc",
+            "CMAKE_CXX_COMPILER": "/usr/bin/g++"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "release",
+            "configurePreset": "release",
+            "description": "Build the Release preset",
+            "hidden": false,
+            "jobs": 4
+        }
+    ]
+}

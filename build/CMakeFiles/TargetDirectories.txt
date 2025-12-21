@@ -1,0 +1,3 @@
+/home/denmarko/projects/UkrCoop/UkrCoop/build/CMakeFiles/rebuild_cache.dir
+/home/denmarko/projects/UkrCoop/UkrCoop/build/CMakeFiles/edit_cache.dir
+/home/denmarko/projects/UkrCoop/UkrCoop/build/CMakeFiles/UkrCoop.dir
