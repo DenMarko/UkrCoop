@@ -1,0 +1,65 @@
+﻿file(GLOB_RECURSE SOURCES_auto CONFIGURE_DEPENDS
+	${CMAKE_CURRENT_SOURCE_DIR}/../../sourcemod/public/asm/*.c
+	${CMAKE_CURRENT_SOURCE_DIR}/../../sourcemod/public/libudis86/*.c
+)
+
+file(GLOB_RECURSE SOURCES_INTERFACE CONFIGURE_DEPENDS
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Interface/*.cpp
+)
+
+set(SOURCES
+	${CMAKE_CURRENT_SOURCE_DIR}/src/GeoIP_SDK/GeoIP.c
+	${SOURCES_auto}
+	${CMAKE_CURRENT_SOURCE_DIR}/src/bulitnum.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/sdk/smsdk_ext.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/sdk/extension.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/sdk/extension_share.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/MyNatives.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/Chat_log.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/detours.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/HL2.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/CCallHelperSetup.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/CUserMessage.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/Log_messege.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/TickRegen.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/ConVar_l4d.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/CTrace.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/CLuaPropProxy.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/CTempEntity.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/CAddAbility.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/CCmdRunHook.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/LuaListthink.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/CStudio.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/CCreatePlayerBot.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/CBaseBans.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/CAdminMenu.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/CTopMenuRespawn.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/CTopMenuTeleport.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/CTopMenuBan.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/CActionHook.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/CActionImpl.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/CActionShared.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/CAmmoDef.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/CAmmoPack.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/MyWitch.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/MyWitchIdle.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/MyWitchAttack.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/MyWitchAngry.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/MyWitchBurn.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/MyWitchBehavior.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/MyWitchRetreat.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/MyWitchBlinded.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/MyWitchKillIncapVictim.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/MyWitchShoved.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/MyWitchStandingAction.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/MyWitchWander.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/MyWitchWanderAngry.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/MyWitchDying.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/MyWitchEvilAttack.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/MyTank.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/MyTankBehavior.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/MyTankIdle.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/MyTankAttack.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/MyLiveSurvivorCount.cpp
+	${SOURCES_INTERFACE}
+)
