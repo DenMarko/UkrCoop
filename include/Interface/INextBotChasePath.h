@@ -32,7 +32,7 @@ private:
 	CountdownTimers m_failTimer;							// throttle re-pathing if last path attempt failed
 	CountdownTimers m_throttleTimer;						// require a minimum time between re-paths
 	CountdownTimers m_lifetimeTimer;
-	EHANDLE m_lastPathSubject;							    // the subject used to compute the current/last path
+	IHANDLES m_lastPathSubject;							    // the subject used to compute the current/last path
 	SubjectChaseType m_chaseHow;
 };
 
@@ -130,7 +130,7 @@ inline void IChasePath::RefreshPath(INextBot *bot, IBaseEntity *subject, const I
 	}
 
 	// if our path subject changed, repath immediately
-	if ( (CBaseEntity *)subject != m_lastPathSubject )
+	if ( subject != m_lastPathSubject )
 	{
 		if(ukr_next_bot_debug.GetBool())
 		{
@@ -186,7 +186,7 @@ inline void IChasePath::RefreshPath(INextBot *bot, IBaseEntity *subject, const I
 				DevMsg("%3.2f: bot(#%d) REPATH\n", g_pGlobals->curtime, reinterpret_cast<IBaseEntity*>(bot->GetEntity())->entindex());
 			}
 
-			m_lastPathSubject = (CBaseEntity*)subject;
+			m_lastPathSubject = subject;
 
 			const float minRepathInterval = 0.5f;
 			m_throttleTimer.Start( minRepathInterval );

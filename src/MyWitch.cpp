@@ -165,6 +165,30 @@ public:
 
         g_pWitchEvil = new CWitchEvil();
     }
+
+    virtual ResultType OnClientCommand(int client, const CCommand &args) override
+    {
+        IGamePlayer *pPlayer = playerhelpers->GetGamePlayer(client);
+        if(!pPlayer ||
+           !pPlayer->IsConnected() || 
+           !pPlayer->IsInGame())
+        {
+            return Pl_Continue;
+        }
+
+        if(g_Sample.my_bStrcmp(args[0], "smoke_grn"))
+        {
+            if(IsAdminAccess(pPlayer->GetAdminId(), ADMFLAG_CHEATS))
+            {
+                auto pEntity = (IBaseEntity*)pPlayer->GetEdict()->GetUnknown()->GetBaseEntity();
+                SmokeGranate(pEntity->GetAbsOrigin());
+            }
+
+            return Pl_Handled;
+        }
+
+        return Pl_Continue;
+    }
 };
 
 CWitchHookCallBack *g_pWitchHook = new CWitchHookCallBack();

@@ -5,7 +5,7 @@
 class TankLocomotion : public PlayerLocomotion
 {
 public:
-    ~TankLocomotion() {}
+    virtual ~TankLocomotion() {}
 
 	virtual void OnAnimationActivityComplete( int activity ) = 0;
     virtual void OnAnimationActivityInterrupted( int activity ) = 0;
@@ -24,7 +24,7 @@ public:
 	void EnterStasis( void ); 
 	void LeaveStasis( void );
 public:
-    ~ITank() {}
+    virtual ~ITank() {}
 
 	virtual ServerClass             *GetServerClass(void) = 0;
 	virtual int					    YouForgotToImplementOrDeclareServerClass(void) = 0;

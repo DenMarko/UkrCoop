@@ -61,21 +61,21 @@ bool Path::ComputePathDetails( INextBot *bot, const Vector &start )
 			to->pos.z = from->area->GetZ( to->pos );
 
 			// if this is a "jump down" connection, we must insert an additional point on the path
-			//float expectedHeightDrop = from->area->GetZ( from->pos ) - to->area->GetZ( to->pos );
+			float expectedHeightDrop = from->area->GetZ( from->pos ) - to->area->GetZ( to->pos );
 
 			// measure the drop distance relative to the actual slope of the ground
-			Vector fromPos = from->pos;
-			fromPos.z = from->area->GetZ( fromPos );
+			// Vector fromPos = from->pos;
+			// fromPos.z = from->area->GetZ( fromPos );
 
-			Vector toPos = to->pos;
-			toPos.z = to->area->GetZ( toPos );
+			// Vector toPos = to->pos;
+			// toPos.z = to->area->GetZ( toPos );
 
-			Vector groundNormal;
-			from->area->ComputeNormal( &groundNormal );
+			// Vector groundNormal;
+			// from->area->ComputeNormal( &groundNormal );
 
-			Vector alongPath = toPos - fromPos;
+			// Vector alongPath = toPos - fromPos;
 
-			float expectedHeightDrop = -DotProduct( alongPath, groundNormal );
+			// float expectedHeightDrop = -DotProduct( alongPath, groundNormal );
 
 			if ( expectedHeightDrop > mover->GetStepHeight() )
 			{
@@ -96,7 +96,7 @@ bool Path::ComputePathDetails( INextBot *bot, const Vector &start )
 				for( pushDist = 0.0f; pushDist <= maxPushDist; pushDist += inc )
 				{
 					Vector pos = to->pos + Vector( pushDist * dir.x, pushDist * dir.y, 0.0f );
-					Vector lowerPos = Vector( pos.x, pos.y, toPos.z );
+					Vector lowerPos = Vector( pos.x, pos.y, pos.z - stepHeight );
 					
 					trace_t result;
 					NextBotTraceFilterIgnoreActors filter( (IHandleEntity*)bot->GetEntity(), COLLISION_GROUP_NONE );

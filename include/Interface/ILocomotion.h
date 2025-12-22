@@ -96,7 +96,7 @@ private:
 class PlayerLocomotion : public ILocomotion
 {
 public:
-	~PlayerLocomotion() {}
+	virtual ~PlayerLocomotion() {}
 
 	virtual void Reset( void ) = 0;
 	virtual void Update( void ) = 0;

@@ -68,7 +68,7 @@ public:
 };
 
 namespace {
-	inline bool SmokeGranate(Vector& vecPos)
+	inline bool SmokeGranate(Vector vecPos)
 	{
 		IParticleSmokeGrenete *pSmoke = (IParticleSmokeGrenete*)g_Sample.CreateEntityByName("env_particlesmokegrenade");
 		if(pSmoke)
