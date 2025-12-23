@@ -154,3 +154,28 @@ void DirectChasePath::NotifyVictim( INextBot *me, IBaseEntity *victim )
 	
 	pBCCVictim->OnPursuedBy( me );
 }
+
+bool IsBottleneck(const INavArea *pThis)
+{
+	if(pThis->GetAdjacentCount(NORTH) > 0)
+	{
+		if(pThis->GetAdjacentCount(NORTH) > 0 && pThis->GetAdjacentCount(SOUTH) > 0 && pThis->GetAdjacentCount(EAST) == 0 && pThis->GetAdjacentCount(WEST) == 0)
+		{
+			return pThis->GetSizeX() < 52.499996f; // 52.5f
+		}
+
+		return false;
+	}
+
+	if(pThis->GetAdjacentCount(NORTH) == 0)
+	{
+		if(pThis->GetAdjacentCount(EAST) > 0 && pThis->GetAdjacentCount(WEST) > 0 && pThis->GetAdjacentCount(SOUTH) == 0)
+		{
+			return pThis->GetSizeY() < 52.499996f; // 52.5f
+		}
+
+		return false;
+	}
+
+    return false;
+}

@@ -26,5 +26,6 @@ extern const char *GetBodygroupPartName( CStudioHdr *pstudiohdr, int iGroup, int
 extern int GetBodygroupCount( CStudioHdr *pstudiohdr, int iGroup );
 extern void SetBodygroup( CStudioHdr *pstudiohdr, int& body, int iGroup, int iValue );
 extern int GetSequenceActivity( CStudioHdr *pstudiohdr, int sequence, int *pweight = NULL );
+extern int GetSharedPoseParameter(CStudioHdr *pThis, int iSequence, int iLocalPose);
 
 #endif

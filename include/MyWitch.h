@@ -800,7 +800,7 @@ private:
 
     CHandle<ITerrorPlayer> hAttacker;
     int8_t cCharacter;
-    IChasePath m_path;
+    InfectedChasePath m_path;
 
     CountdownTimers m_timer1;
     IntervalTimers m_interval1;

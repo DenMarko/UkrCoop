@@ -238,7 +238,7 @@ private:
     const int GetDifficulty() const;
 
     CHandle<ITerrorPlayer> m_hPlayer;
-    DirectChasePath m_path;
+    InfectedChasePath m_path;
 
     IntervalTimers m_attackTimer;           // Таймер атаки (використовується в OnStart та TryToThrowRock)
     CountdownTimers m_unusedTimer;          // Або можна видалити
@@ -285,7 +285,6 @@ public:
     virtual EventDesiredResult< ITank > OnInjured(ITank* me, const CTakeDamageInfo& info) override;
     virtual EventDesiredResult< ITank > OnShoved(ITank* me, CBaseEntity* pusher) override;
     virtual EventDesiredResult< ITank > OnContact(ITank* me, CBaseEntity* other, CGameTrace *result = nullptr) override;
-
 };
 
 class TankBehavior : public Action<ITank>

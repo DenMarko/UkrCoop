@@ -148,16 +148,6 @@ bool HL2::SetupUnReserveLobby()
     END_SETUP(s_UnReserver, CallConv_ThisCall, NULL, s_info, 3)
 }
 
-bool HL2::SetupSetOrigin()
-{
-    BEGIN_SETUP(s_SetOrigin, UTIL_SetOrigin)
-        PassInfo s_info[3];
-        SetParam(&s_info[0], sizeof(void *));
-        SetParam(&s_info[1], sizeof(Vector *));
-        SetParam(&s_info[2], sizeof(bool));
-    END_SETUP(s_SetOrigin, CallConv_Cdecl, nullptr, s_info, 3)
-}
-
 bool HL2::SetupGetSeqenceMoveYam()
 {
     BEGIN_SETUP(s_GetSequenceMoveYam, GetSequenceMoveYam)
@@ -401,15 +391,6 @@ bool HL2::SetupDirectorIsVisibleToTeam()
     END_SETUP(s_DirectorIsVisibleToTeam, CallConv_ThisCall, &result, param, 6)
 }
 
-bool HL2::SetupInfectedSetDamagedBodyGroupVariant()
-{
-    BEGIN_SETUP(s_SetDamagedBodyGroupVariant, Infected_SetDamagedBodyGroupVariant)
-        PassInfo param[2];
-        SetParam(&param[0], sizeof(const char*));
-        SetParam(&param[1], sizeof(const char*));
-    END_SETUP(s_SetDamagedBodyGroupVariant, CallConv_ThisCall, nullptr, param, 2)
-}
-
 bool HL2::SetupState_Transition()
 {
     BEGIN_SETUP(s_State_Transition, CCSPlayer_State_Transition)
@@ -611,26 +592,6 @@ bool HL2::SetupGetWorldEntity()
     END_SETUP(s_GetWorldEntity, CallConv_Cdecl, &ret, nullptr, 0)
 }
 
-bool HL2::SetupSetPoseParam()
-{
-    BEGIN_SETUP(s_SetPoseParam, BaseAnimation_SetPoseParam)
-        PassInfo param[3], result;
-        SetParam(&param[0], sizeof(void *));
-        SetParam(&param[1], sizeof(int));
-        SetParam(&param[2], sizeof(float), PASSFLAG_BYVAL, PassType_Float);
-        SetParam(&result, sizeof(float), PASSFLAG_BYVAL, PassType_Float);
-    END_SETUP(s_SetPoseParam, CallConv_ThisCall, &result, param, 3)
-}
-
-bool HL2::SetupSetSequence()
-{
-    BEGIN_SETUP(s_SetSequence, BaseAnimation_SetSequence)
-        PassInfo param, result;
-        SetParam(&param, sizeof(int));
-        SetParam(&result, sizeof(int));
-    END_SETUP(s_SetSequence, CallConv_ThisCall, &result, &param, 1)
-}
-
 bool HL2::SetupHasPoseParam()
 {
     BEGIN_SETUP(s_HasPoseParam, BaseAnimation_HasPoseParam)
@@ -639,16 +600,6 @@ bool HL2::SetupHasPoseParam()
         SetParam(&param[1], sizeof(int));
         SetParam(&result,  sizeof(bool));
     END_SETUP(s_HasPoseParam, CallConv_ThisCall, &result, param, 2)
-}
-
-bool HL2::SetupLookupPoseParam()
-{
-    BEGIN_SETUP(s_LookupPoseParam, BaseAnimation_LookupPoseParameter)
-        PassInfo param[2], result;
-        SetParam(&param[0], sizeof(void *));
-        SetParam(&param[1], sizeof(const char *));
-        SetParam(&result, sizeof(int));
-    END_SETUP(s_LookupPoseParam, CallConv_ThisCall, &result, param, 2)
 }
 
 bool HL2::SetupLockStudioHdr()
@@ -699,20 +650,10 @@ bool HL2::SetupTakeOversBot()
     END_SETUP(s_TakeOver, CallConv_ThisCall, NULL, &s_info, 1)
 }
 
-
 bool HL2::SetupSetHumansSpec()
 {
     BEGIN_SETUP(s_HumenSpec, SetHumanSpec)
         PassInfo s_info;
         SetParam(&s_info, sizeof(void *));
     END_SETUP(s_HumenSpec, CallConv_ThisCall, NULL, &s_info, 1)
-}
-
-bool HL2::SetupStargget()
-{
-    BEGIN_SETUP(s_Stargged, CTerrorPlayer_OnStaggered)
-        PassInfo s_info[2];
-        SetParam(&s_info[0], sizeof(void *));
-        SetParam(&s_info[1], sizeof(void *));
-    END_SETUP(s_Stargged, CallConv_ThisCall, NULL, s_info, 2)
 }

@@ -641,6 +641,45 @@ float IBaseAnimating::GetPoseParameter( int iParameter )
 	return 0.0;
 }
 
+bool IBaseAnimating::HasPoseParameter(int iSequence, const char *szName)
+{
+	int iParameter = LookupPoseParameter( szName );
+	if(iParameter == -1)
+	{
+    	return false;
+	}
+
+	return HasPoseParameter(iSequence, iParameter);
+}
+
+bool IBaseAnimating::HasPoseParameter(int iSequence, int iParameter)
+{
+	CStudioHdr *pstudiohdr = GetModelPtr( );
+	if(!pstudiohdr)
+	{
+		return false;
+	}
+
+	if(!SeqencesAvailable(pstudiohdr))
+	{
+		return false;
+	}
+
+	if(iSequence < 0 || iSequence >= GetNumSeq(pstudiohdr))
+	{
+		return false;
+	}
+
+	mstudioseqdesc_t &seqdesc = pSeqdesc(pstudiohdr, iSequence);
+	if(GetSharedPoseParameter(pstudiohdr, iSequence, seqdesc.paramindex[0]) == iParameter ||
+	   GetSharedPoseParameter(pstudiohdr, iSequence, seqdesc.paramindex[1]) == iParameter)
+	{
+		return true;
+	}
+
+    return false;
+}
+
 int IBaseAnimating::FindBodygroupByName( const char *szName )
 {
 	return ::FindBodygroupByName( GetModelPtr(), szName );

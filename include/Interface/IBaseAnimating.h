@@ -184,6 +184,9 @@ public:
 	float					GetPoseParameter( const char *szName );
 	float					GetPoseParameter( int iParameter );
 
+	bool					HasPoseParameter( int iSequence, const char *szName );
+	bool					HasPoseParameter( int iSequence, int iParameter );
+
 	int						FindBodygroupByName( const char *szName );
 	int 					GetNumBodyGroups( void );
 	int 					GetBodygroup( int iGroup );

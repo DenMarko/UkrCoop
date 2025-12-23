@@ -21,6 +21,7 @@ void InitPrecache()
     g_ModelIndexLaserBeam = PrecacheModels("materials/sprites/laserbeam.vmt");
 	g_ModelIndexSmoke = PrecacheModels("sprites/steam1.vmt");
 	PrecacheModels("sprites/blueglow1.vmt");
+	PrecacheModels("particle/particle_smoker.vmt");
 }
 
 /*************************

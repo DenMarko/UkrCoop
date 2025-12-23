@@ -1,7 +1,7 @@
 #include "MyTank.h"
 #include "Interface/IBaseAbility.h"
 
-TankAttack::TankAttack() : 
+TankAttack::TankAttack() : m_path(IChasePath::LEAD_SUBJECT),
     cv_stuckFailsafe("tank_stuck_failsafe"), 
     cv_stasisSuicideTime("tank_stasis_time_suicide"),
     cv_stuckNewTargetTime("tank_stuck_time_choose_new_target"),

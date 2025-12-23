@@ -315,5 +315,65 @@ public:
 	void NotifyVictim( INextBot *me, IBaseEntity *victim );
 };
 
+bool IsBottleneck(const INavArea *pThis);
+
+/*Шлях переслідування інфікованого*/
+class InfectedChasePath : public DirectChasePath
+{
+public:
+
+	InfectedChasePath( IChasePath::SubjectChaseType chaseHow = IChasePath::DONT_LEAD_SUBJECT ) : DirectChasePath( chaseHow )
+	{
+
+	}
+
+	/**
+	 * Determine exactly where the path goes between the given two areas
+	 * on the path. Return this point in 'crossPos'.
+	 */
+	virtual void ComputeAreaCrossing( INextBot *bot, const INavArea *from, const Vector &fromPos, const INavArea *to, Nav_DirType dir, Vector *crossPos ) const
+	{
+		Vector center;
+		float halfWidth;
+
+		// Обчислюємо портал (перехід) між двома областями
+		from->ComputePortal( to, dir, &center, &halfWidth );
+
+		// Обмежуємо максимальну ширину порталу
+		if(halfWidth > 50.0f)
+		{
+			halfWidth = 50.0f;
+		}
+
+		// Початкова точка перетину - центр порталу
+		*crossPos = center;
+
+		// Якщо цільова область не є вузьким місцем, додаємо випадкове зміщення
+		if(!IsBottleneck(to))
+		{
+			// Додаємо випадкове зміщення на основі унікальних ідентифікаторів областей та індексу сутності бота
+			auto pEntity = (IBaseCombatCharacter*)bot->GetEntity();
+			int entindex = pEntity->entindex();
+
+			float randomAngle = static_cast<float>(from->GetID() + to->GetID() + entindex);
+			float cosAngle = cosf(randomAngle);
+			// Обчислюємо максимальне зміщення, щоб залишатися в межах порталу
+			float maxOffset = halfWidth - (bot->GetBodyInterface()->GetHullWidth() * 0.5f);
+
+			// Переконуємося, що максимальне зміщення не є від'ємним
+			if(maxOffset < 0.f)
+			{
+				maxOffset = 0.f;
+			}
+
+			// Застосовуємо зміщення до відповідної координати в залежності від напрямку руху
+			float offset = maxOffset * cosAngle;
+			if(dir == SOUTH || dir == NORTH)
+				crossPos->x += offset;
+			else
+				crossPos->y += offset;
+		}
+	}
+};
 
 #endif

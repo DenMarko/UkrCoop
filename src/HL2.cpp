@@ -243,7 +243,6 @@ HL2::HL2() :
 
 HL2::~HL2()
 {
-    s_Stargged.Shutdown();
     s_TakeOver.Shutdown();
     s_HumenSpec.Shutdown();
     s_UnReserver.Shutdown();
@@ -253,17 +252,13 @@ HL2::~HL2()
     s_HasAnySurvivorLeftSafeArea.Shutdown();
     s_OnMobRash.Shutdown();
     s_SpawnITMob.Shutdown();
-    s_SetOrigin.Shutdown();
     s_GetSequenceMoveYam.Shutdown();
     s_AddStepDiscon.Shutdown();
     s_FindEntityByName.Shutdown();
     s_PhysicsTouchTriger.Shutdown();
     s_NPCPhysics_CreateSolver.Shutdown();
     s_LockStudioHdr.Shutdown();
-    s_LookupPoseParam.Shutdown();
     s_HasPoseParam.Shutdown();
-    s_SetSequence.Shutdown();
-    s_SetPoseParam.Shutdown();
     s_UTIL_Remove.Shutdown();
     s_GetAmmoDef.Shutdown();
     s_PhysIsInCallback.Shutdown();
@@ -294,7 +289,6 @@ HL2::~HL2()
     s_CResponseQueueAdd.Shutdown();
     s_IsBreakableEntity.Shutdown();
     s_DirectorIsVisibleToTeam.Shutdown();
-    s_SetDamagedBodyGroupVariant.Shutdown();
     s_State_Transition.Shutdown();
     s_GetFileWeaponInfoFromHandlet.Shutdown();
     s_MoveHelperServerv.Shutdown();
@@ -1152,15 +1146,6 @@ void HL2::UnReserveLobby()
     }
 }
 
-void HL2::SetOriginal(CBaseEntity *pEnt, Vector *vecSet, bool bFireTriggers)
-{
-    if(SetupSetOrigin())
-    {
-        ArgcBuffer<CBaseEntity *, Vector*, bool> vparam(pEnt, vecSet, bFireTriggers);
-        s_SetOrigin->Execute(vparam, nullptr);
-    }
-}
-
 IPhysicsObject *HL2::PhysModelCreate(IBaseEntity *pEnt, int modelIndex, const Vector *origin, const QAngle *angles, solid_t *pSolid)
 {
     if(SetupPhysModelCreate())
@@ -1319,19 +1304,6 @@ void HL2::LockStudioHdr(IBaseAnimating *pThisPtr)
     return;
 }
 
-int HL2::LookupPoseParam(CBaseEntity *pThisPtr, void *modePtr, const char *szName)
-{
-    int iResult = -2;
-
-    if(SetupLookupPoseParam())
-    {
-        ArgcBuffer<CBaseEntity*, void *, const char *> param(pThisPtr, modePtr, szName);
-        s_LookupPoseParam->Execute(param, &iResult);
-    }
-
-    return iResult;
-}
-
 bool HL2::HasPoseParam(CBaseEntity *pThisPtr, int iSeqence, int iParam)
 {
     bool bResult = false;
@@ -1342,31 +1314,6 @@ bool HL2::HasPoseParam(CBaseEntity *pThisPtr, int iSeqence, int iParam)
     }
 
     return bResult;
-}
-
-int HL2::SetSequence(CBaseEntity *pThisPtr, int nSequence)
-{
-    int result = -1;
-    if(SetupSetSequence())
-    {
-        ArgcBuffer<CBaseEntity *, int> param(pThisPtr, nSequence);
-        s_SetSequence->Execute(param, &result);
-    }
-
-    return result;
-}
-
-float HL2::SetPoseParam(CBaseEntity *pThisPtr, void *pModel, int iParam, float flValue)
-{
-    float flResult = -1.f;
-
-    if(SetupSetPoseParam())
-    {
-        ArgcBuffer<CBaseEntity *, void *, int, float> param(pThisPtr, pModel, iParam, flValue);
-        s_SetPoseParam->Execute(param, &flResult);
-    }
-
-    return flResult;
 }
 
 void HL2::UTIL_Remove(void *pRemovePtr)
@@ -1660,15 +1607,6 @@ bool HL2::IsBreakableEntity(CBaseEntity *pentity, bool val1, bool val2)
     return bResult;
 }
 
-void HL2::Infected_SetDamagedBodyGroupVariant(void *me, const char *szVal1, const char *szVal2)
-{
-    if(SetupInfectedSetDamagedBodyGroupVariant())
-    {
-        VCaller::ArgcBuffer<void*, const char*, const char*> pParam(me, szVal1, szVal2);
-        s_SetDamagedBodyGroupVariant->Execute(pParam, nullptr);
-    }
-}
-
 #include "MemberFunctionWrapper.h"
 static MemberFunctionWrapper<string_t, const char*> func_AllocPooledString;
 string_t HL2::AllocPooledString(const char *name)
@@ -1826,14 +1764,6 @@ void HL2::setHumansSpec(CBaseEntity *bEntity, CBaseEntity *pEntity)
     if(this->SetupSetHumansSpec())
     {
         s_HumenSpec->Execute(ArgcBuffer<CBaseEntity *, CBaseEntity *>(bEntity, pEntity), NULL);
-    }
-}
-
-void HL2::PlayerStargget(CBaseEntity *pEntity, CBaseEntity *tEntity, Vector *tVector)
-{
-    if(this->SetupStargget())
-    {
-        s_Stargged->Execute(ArgcBuffer<CBaseEntity *, CBaseEntity *, Vector *>(pEntity, tEntity, tVector), NULL);
     }
 }
 

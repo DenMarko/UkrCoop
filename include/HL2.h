@@ -349,16 +349,12 @@ public:
     virtual void setHumansSpec(CBaseEntity *bEntity, CBaseEntity *pEntity) = 0;
     virtual void RadiusDamage(const CTakeDamageInfo& info, const Vector &vecSrc, float flRadius, int iClassIgnore, bool bIgnoreWorld) = 0;
     virtual int IsLiveSurInside(CBaseEntity *gRescue) = 0;
-    virtual void SetOriginal(CBaseEntity *, Vector*, bool) = 0;
     virtual float GetSequenceMoveYam(CBaseEntity*, int) = 0;
     virtual bool AddStepDiscontinuity(CBaseEntity *, float, Vector*, QAngle*) = 0;
     virtual void PhysicsTouchTriggers(const CBaseEntity *pThisPtr, const Vector *pPrevAbsOrigin) = 0;
     virtual CBaseEntity *NPCPhysicsCreateSolver(CBaseEntity *pNPC, CBaseEntity* pPhysicsObject, bool disableCollisions, float separationDuration) = 0;
     virtual void LockStudioHdr(IBaseAnimating *pThisPtr) = 0;
-    virtual int LookupPoseParam(CBaseEntity *pThisPtr, void* modePtr, const char *szName) = 0;
     virtual bool HasPoseParam(CBaseEntity *, int iSeqence, int iParam) = 0;
-    virtual int SetSequence(CBaseEntity*, int nSequence) = 0;
-    virtual float SetPoseParam(CBaseEntity*, void *, int, float) = 0;
     virtual void UTIL_Remove(void *) = 0;
     virtual void *GetAmmoDef(void) = 0;
     virtual bool IsPhysIsInCallback() = 0;
@@ -388,7 +384,6 @@ public:
     virtual int CSoundEnt_InsertSound(int iType, const Vector& vecOrigion, int iVolume, float flDyration, CBaseEntity* pOwner = nullptr, int soundChannelIndex = 0, CBaseEntity* pSoundTarget = NULL) = 0;
     virtual void CResponseQueue_Add(const CAI_Concept& concepts, const void* context, float time, const CFollowupTargetSpec_t& targetspec, void *pIssuer) = 0;
     virtual bool IsBreakableEntity(CBaseEntity*, bool, bool) = 0;
-    virtual void Infected_SetDamagedBodyGroupVariant(void* me, const char*, const char*) = 0;
     virtual string_t AllocPooledString(const char* name) = 0;
     virtual void CCSPlayer_State_Transition(void*, int) = 0;
     virtual bool Director_IsVisibleToTeam(const Vector& vec, int team, int val1 = 0, float val2 = 0.f, INavArea* area = nullptr, const CBaseEntity* pEntity = nullptr) = 0;
@@ -404,7 +399,6 @@ public:
     virtual void UnReserveLobby() = 0;
     virtual int64_t GetReserveLobby() = 0;
     virtual void PlayerVomitUpon(CBaseEntity *pEntity, CBaseEntity *aEntity, cell_t params) = 0;
-    virtual void PlayerStargget(CBaseEntity *pentity, CBaseEntity *tEntity, Vector *pVector) = 0;
     virtual void *GetFileWeaponInfoFromHandlet(unsigned short handle) = 0;
     virtual IMoveHelperServer *MoveHelperServerv() = 0;
     virtual IPhysicsObject *PhysModelCreate(IBaseEntity* pEnt, int modelIndex, const Vector *origin, const QAngle *angles, solid_t *pSolid = nullptr) = 0;
@@ -446,7 +440,6 @@ private:
     void *g_pPhysicsCollision;
     void *g_pDirtyKDTree;
 
-    VCaller::CCallHelper s_Stargged;
     VCaller::CCallHelper s_TakeOver;
     VCaller::CCallHelper s_HumenSpec;
     VCaller::CCallHelper s_UnReserver;
@@ -456,17 +449,13 @@ private:
     VCaller::CCallHelper s_HasAnySurvivorLeftSafeArea;
     VCaller::CCallHelper s_OnMobRash;
     VCaller::CCallHelper s_SpawnITMob;
-    VCaller::CCallHelper s_SetOrigin;
     VCaller::CCallHelper s_GetSequenceMoveYam;
     VCaller::CCallHelper s_AddStepDiscon;
     VCaller::CCallHelper s_FindEntityByName; //_ZN17CGlobalEntityList16FindEntityByNameEP11CBaseEntityPKcS1_S1_S1_P17IEntityFindFilter
     VCaller::CCallHelper s_PhysicsTouchTriger; //_ZN11CBaseEntity20PhysicsTouchTriggersEPK6Vector
     VCaller::CCallHelper s_NPCPhysics_CreateSolver; //_Z23NPCPhysics_CreateSolverP11CAI_BaseNPCP11CBaseEntitybf
     VCaller::CCallHelper s_LockStudioHdr; //_ZN14CBaseAnimating13LockStudioHdrEv
-    VCaller::CCallHelper s_LookupPoseParam; //BaseAnimation_LookupPoseParameter
     VCaller::CCallHelper s_HasPoseParam; //BaseAnimation_HasPoseParam
-    VCaller::CCallHelper s_SetSequence; //BaseAnimation_SetSequence
-    VCaller::CCallHelper s_SetPoseParam; //BaseAnimation_SetPoseParam
     VCaller::CCallHelper s_UTIL_Remove; //UTIL_Remove
     VCaller::CCallHelper s_GetAmmoDef;
     VCaller::CCallHelper s_PhysIsInCallback;
@@ -497,7 +486,6 @@ private:
     VCaller::CCallHelper s_CResponseQueueAdd;
     VCaller::CCallHelper s_IsBreakableEntity;
     VCaller::CCallHelper s_DirectorIsVisibleToTeam;
-    VCaller::CCallHelper s_SetDamagedBodyGroupVariant;
     VCaller::CCallHelper s_State_Transition;
     VCaller::CCallHelper s_GetFileWeaponInfoFromHandlet;
     VCaller::CCallHelper s_MoveHelperServerv;
@@ -566,17 +554,13 @@ public:
     void CalculateExplosiveDamageForce( CTakeDamageInfo *info, const Vector &vecDir, const Vector &vecForceOrigin, float flScale );
 
     virtual int IsLiveSurInside(CBaseEntity *gRescue);
-    virtual void SetOriginal(CBaseEntity *, Vector*, bool);
     virtual float GetSequenceMoveYam(CBaseEntity*, int);
     virtual bool AddStepDiscontinuity(CBaseEntity *, float, Vector*, QAngle*);
     virtual IBaseEntity *FindEntityByName(IBaseEntity* pStartEntity, const char* szName, IBaseEntity* pSearchEntity = nullptr, IBaseEntity *pActivator = nullptr, IBaseEntity *pCaller = nullptr, IEntityFindFilter *pFilter = nullptr);
     virtual void PhysicsTouchTriggers(const CBaseEntity *pThisPtr, const Vector *pPrevAbsOrigin);
     virtual CBaseEntity *NPCPhysicsCreateSolver(CBaseEntity *pNPC, CBaseEntity* pPhysicsObject, bool disableCollisions, float separationDuration);
     virtual void LockStudioHdr(IBaseAnimating *pThisPtr);
-    virtual int LookupPoseParam(CBaseEntity *pThisPtr, void* modePtr, const char *szName);
     virtual bool HasPoseParam(CBaseEntity *, int iSeqence, int iParam);
-    virtual int SetSequence(CBaseEntity*, int nSequence);
-    virtual float SetPoseParam(CBaseEntity*, void *, int, float);
     virtual void UTIL_Remove(void *);
     virtual void *GetAmmoDef();
     virtual bool IsPhysIsInCallback();
@@ -606,7 +590,6 @@ public:
     virtual int CSoundEnt_InsertSound(int iType, const Vector& vecOrigion, int iVolume, float flDyration, CBaseEntity* pOwner = nullptr, int soundChannelIndex = 0, CBaseEntity* pSoundTarget = NULL);
     virtual void CResponseQueue_Add(const CAI_Concept& concepts, const void* context, float time, const CFollowupTargetSpec_t& targetspec, void *pIssuer);
     virtual bool IsBreakableEntity(CBaseEntity*, bool, bool);
-    virtual void Infected_SetDamagedBodyGroupVariant(void* me, const char*, const char*);
     virtual string_t AllocPooledString(const char* name);
     virtual void CCSPlayer_State_Transition(void*, int);
     
@@ -627,7 +610,6 @@ public:
     virtual int64_t GetReserveLobby();
 
     virtual void PlayerVomitUpon(CBaseEntity *pEntity, CBaseEntity *aEntity, cell_t params);
-    virtual void PlayerStargget(CBaseEntity *pentity, CBaseEntity *tEntity, Vector *pVector);
 
     virtual IBaseEntity *FindEntityGeneric( IBaseEntity *pStartEntity, const char *szName, IBaseEntity *pSearchingEntity = nullptr, IBaseEntity *pActivator = nullptr, IBaseEntity *pCaller = nullptr );
     virtual void *GetFileWeaponInfoFromHandlet(unsigned short handle);
@@ -675,22 +657,17 @@ private:
     bool SetupSetHumansSpec();
     bool SetupUnReserveLobby();
     bool SetupReserveLobby();
-    bool SetupStargget();
     bool SetupVomitUpon();
     bool SetupHasAnySurvivorLeftSafeArea();
     bool SetupOnMobRash();
     bool SetupSpawnITMob();
-    bool SetupSetOrigin();
     bool SetupGetSeqenceMoveYam();
     bool SetupAddStepDiscontinuity();
     bool SetupFindEntityByName();
     bool SetupPhysicsTouchTrigger();
     bool SetupNPCPhysicsCreateSolver();
     bool SetupLockStudioHdr();
-    bool SetupLookupPoseParam();
     bool SetupHasPoseParam();
-    bool SetupSetSequence();
-    bool SetupSetPoseParam();
     bool SetupRemove();
     bool SetupGetAmmoDef();
     bool SetuppHysIsInCallback();
@@ -721,7 +698,6 @@ private:
     bool SetupCResponseQueueAdd();
     bool SetupIsBreakableEntity();
     bool SetupDirectorIsVisibleToTeam();
-    bool SetupInfectedSetDamagedBodyGroupVariant();
     bool SetupState_Transition();
     bool SetupGetFileWeaponInfoFromHandlet();
     bool SetupMoveHelperServerv();

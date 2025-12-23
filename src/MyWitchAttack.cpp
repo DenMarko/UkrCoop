@@ -18,6 +18,7 @@ const char *SurvivorCharacterName(int8_t character)
 }
 
 WitchAttack::WitchAttack(ITerrorPlayer *pAttacker, bool bStartSoundPlay) : 
+    m_path(IChasePath::LEAD_SUBJECT),
     m_soundPlay(bStartSoundPlay), 
     m_ChangeVictim("z_witch_allow_change_victim"), 
     m_AttackRange("z_witch_attack_range")
