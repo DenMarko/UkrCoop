@@ -1,5 +1,6 @@
 #include "MyTank.h"
 #include "detours.h"
+#include "Interface/IInfected.h"
 
 ConVar tank_block_ladder("ukr_tank_block_ladder", "30", FCVAR_CHEAT, "distance to stargered blockera", true, 0.f, true, 200.f);
 
@@ -96,7 +97,7 @@ InfectedPathCost::InfectedPathCost(INextBot *bot)
         {
             auto pInfected = m_pEnemy->MyInfectedPointer();
             if(pInfected)
-                m_flRandomFactor = access_member<float>(pInfected, 3548);
+                m_flRandomFactor = pInfected->GetRandomFactor();
         }
     }
 }
@@ -113,7 +114,7 @@ InfectedPathCost::InfectedPathCost(ITank *bot)
         {
             auto pInfected = m_pEnemy->MyInfectedPointer();
             if(pInfected)
-                m_flRandomFactor = access_member<float>(pInfected, 3548);
+                m_flRandomFactor = pInfected->GetRandomFactor();
         }
     }
 }

@@ -155,26 +155,27 @@ void DirectChasePath::NotifyVictim( INextBot *me, IBaseEntity *victim )
 	pBCCVictim->OnPursuedBy( me );
 }
 
+/** Returns true if the given area is a bottleneck */
 bool IsBottleneck(const INavArea *pThis)
 {
-	if(pThis->GetAdjacentCount(NORTH) > 0)
-	{
-		if(pThis->GetAdjacentCount(NORTH) > 0 && pThis->GetAdjacentCount(SOUTH) > 0 && pThis->GetAdjacentCount(EAST) == 0 && pThis->GetAdjacentCount(WEST) == 0)
-		{
-			return pThis->GetSizeX() < 52.499996f; // 52.5f
-		}
+	const float BOTTLENECK_THRESHOLD = 52.499996f;
 
-		return false;
+	// Перевіряємо наявність північних сусідів
+	if(pThis->GetAdjacentCount(NORTH))
+	{
+		// Якщо немає південних сусідів, перевіряємо східні та західні напрямки
+		if(pThis->GetAdjacentCount(SOUTH) > 0 && !pThis->GetAdjacentCount(EAST) && !pThis->GetAdjacentCount(WEST))
+		{
+			return pThis->GetSizeX() < BOTTLENECK_THRESHOLD; // 52.5f
+		}
 	}
-
-	if(pThis->GetAdjacentCount(NORTH) == 0)
+	else
 	{
-		if(pThis->GetAdjacentCount(EAST) > 0 && pThis->GetAdjacentCount(WEST) > 0 && pThis->GetAdjacentCount(SOUTH) == 0)
+		// Якщо немає північних сусідів, перевіряємо інші напрямки
+		if(!pThis->GetAdjacentCount(SOUTH) && pThis->GetAdjacentCount(EAST) > 0 && pThis->GetAdjacentCount(WEST) > 0)
 		{
-			return pThis->GetSizeY() < 52.499996f; // 52.5f
+			return pThis->GetSizeY() < BOTTLENECK_THRESHOLD; // 52.5f
 		}
-
-		return false;
 	}
 
     return false;

@@ -1453,6 +1453,6 @@ inline RenderFx_t IBaseEntity::GetRenderFX() const
 #define SetBlocked( a ) m_pfnBlocked = static_cast <void (IBaseEntity::*)(IBaseEntity *)> (a)
 
 IBaseEntity* CreateNoSpawn(const char* szName, const Vector &vecOrigion, const QAngle &vecAngles, IBaseEntity* pOwner);
-IBaseEntity* CreateSpawn(const char* szName, const Vector &vecOrigion, const QAngle &vecAngles, IBaseEntity* pOwner);
+IBaseEntity* CreateSpawn(  const char* szName, const Vector &vecOrigion, const QAngle &vecAngles, IBaseEntity* pOwner);
 
 #endif

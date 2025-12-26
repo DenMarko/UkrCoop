@@ -15,6 +15,7 @@ enum FlowType {
     AWAY_FROM_START
 };
 
+// Вмикання музики атаки танка
 class TankAttackMusic
 {
 public:
@@ -35,6 +36,7 @@ public:
     }
 };
 
+// Пошук гравця з мініганом
 class MinigunnerScan
 {
 public:
@@ -64,6 +66,7 @@ private:
     ITerrorPlayer* pBestMinigun;
 };
 
+// Виправлення блокування драбини танкам
 class LadderBlockFix
 {
     INextBot *m_pNextBot;
@@ -80,6 +83,7 @@ public:
     virtual bool operator()(ITerrorPlayer* pPlayer);
 };
 
+// Вартість шляху для переслідування інфікованого
 class InfectedPathCost : public IPathCost
 {
 private:
@@ -189,6 +193,7 @@ inline EventDesiredResult< Actor > BehaviorMoveTo< Actor, PathCost >::OnMoveToFa
 	return this->TryDone( RESULT_CRITICAL, "OnMoveToFailure" );
 }
 
+// Подія створення події запалення зомбі
 class CZombieIgnite : public EVENTS::CBaseEvent
 {
 public:
@@ -237,8 +242,8 @@ private:
 
     const int GetDifficulty() const;
 
-    CHandle<ITerrorPlayer> m_hPlayer;
-    InfectedChasePath m_path;
+    CHandle<ITerrorPlayer> m_hPlayer;       // Поточна цільова гравець
+    InfectedChasePath m_path;               // Шлях переслідування
 
     IntervalTimers m_attackTimer;           // Таймер атаки (використовується в OnStart та TryToThrowRock)
     CountdownTimers m_unusedTimer;          // Або можна видалити
@@ -247,7 +252,7 @@ private:
     IntervalTimers m_stasisTimer;           // Таймер стазису перед самогубством
     float m_throwAimError;                  // Похибка прицілювання при киданні
     
-    LadderBlockFix m_blockLader;
+    LadderBlockFix m_blockLader;            // Виправлення блокування драбини
 
     ConVarRef cv_stuckFailsafe;             // tank_stuck_failsafe
     ConVarRef cv_stasisSuicideTime;         // tank_stasis_time_suicide
@@ -324,8 +329,8 @@ public:
     }
 
 private:
-    ITank *m_me;
-    Behavior<ITank> *m_behavior;
+    ITank *m_me;                    // Збережений вказівник на ITank
+    Behavior<ITank> *m_behavior;    // Поведінковий об'єкт
 };
 
 #endif //_HEADER_MY_TANK_INCLUDE_

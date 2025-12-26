@@ -203,6 +203,12 @@ void TickRegen::OnClientDisconnected(int client)
 	}
 }
 
+/**
+ * Main game frame function that updates universal time and triggers regeneration logic.
+ * It checks if the map has ticked yet and updates the universal time accordingly.
+ * Depending on the current universal time, it calls the appropriate regeneration functions
+ * and sets the next think times for regeneration and Lua frame execution.
+ */
 void TickRegen::GameFrame(bool simul)
 {
 	if(simul && m_bHasMapTickedYet)
@@ -281,6 +287,12 @@ void TickRegen::RegenFrame()
 	ForEachClientList(m_Regen);
 }
 
+/**
+ * Handles client connection events by adding them to the regeneration list.
+ * If the client is already in the list, it checks if they are still valid.
+ * If not valid, it removes them from the list. If valid, it does nothing.
+ * If the client is new, it checks their team and adds them to the list if appropriate.
+ */
 void TickRegen::OnClientConnect(edict_t *pEdict, const char *pName)
 {
     int client = g_Sample.IndexOfEdict(pEdict);
@@ -347,6 +359,11 @@ void TickRegen::OnClientConnect(edict_t *pEdict, const char *pName)
 	return;
 }
 
+/**
+ * Sets extra execution parameters for a specific client in the regeneration list.
+ * If the client is found, it updates their extra execution status, health points, and tick interval.
+ * If the client is not found in the list, the function simply returns without making any changes.
+ */
 void TickRegen::SetExtraExec(int client, bool extra, int hp, float t_tick)
 {
 	for(auto iClient : m_infoClient)
@@ -370,11 +387,22 @@ void TickRegen::SetExtraExec(int client, bool extra, int hp, float t_tick)
 	return;
 }
 
+/**
+ * Retrieves the current simulated time in the game.
+ *
+ * @return The current simulated time as a double.
+ */
 double TickRegen::GetSimulateTime() const
 {
 	return g_fUniversalTime;
 }
 
+/**
+ * Handles game events related to round start and end.
+ * Updates the round start status based on the event name.
+ *
+ * @param event Pointer to the IGameEvent object containing event details.
+ */
 void TickRegen::FireGameEvent(IGameEvent *event)
 {
 	const char* szEventName = event->GetName();
@@ -390,6 +418,16 @@ void TickRegen::FireGameEvent(IGameEvent *event)
 	}
 }
 
+/**
+ * Constructor for the CInfoClient class.
+ *
+ * @param ToExecTick The time until the next execution tick.
+ * @param ExtraTick The time interval for extra execution.
+ * @param iIndex The index of the client.
+ * @param iHp The health points for regeneration.
+ * @param bExtra Flag indicating if extra execution is enabled.
+ * @param flUniversal Reference to the universal time variable.
+ */
 CInfoClient::CInfoClient(float ToExecTick, float ExtraTick, int iIndex, int iHp, bool bExtra, double &flUniversal) : 
 	flUniversalTime(&flUniversal),
 	m_ToExec(flUniversal + ToExecTick), 

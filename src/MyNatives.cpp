@@ -739,7 +739,7 @@ enum TypeDifficulty
 
 FUNC_NATIVE(GetGameDifficulty)
 {
-	ConVarRef difficulty("z_difficulty");
+	static ConVarRef difficulty("z_difficulty");
 	//const char *sDifficulty = g_pConVar->GetConVarString("z_difficulty");
 
 	if(g_Sample.my_strcmp(difficulty.GetString(), "Easy") == 0) {

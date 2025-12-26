@@ -14,6 +14,7 @@
 
 #include "LuaBridge/LuaBridge.h"
 
+// Клас для керування злими ефектами Witch
 class CWitchEvil
 {
 public:
@@ -46,6 +47,7 @@ inline ITerrorPlayer* ToTerrorPlayer(IBaseEntity* pEntity)
     return static_cast<ITerrorPlayer*>(pEntity);
 }
 
+// Таймери інтервалів
 class Intensity
 {
 public:
@@ -72,6 +74,7 @@ private:
     CountdownTimers m_decayTimer;
 };
 
+// Спеціалізований клас вартості шляху для Witch
 class WitchPathCost : public IPathCost
 {
 private:
@@ -219,6 +222,7 @@ private:
     }
 };
 
+// Спеціалізований клас вартості шляху для ходячої Witch
 class WanderingWitchPathCost : public IPathCost
 {
 public:
@@ -236,7 +240,7 @@ private:
     // Константи для налаштування поведінки ходячої Witch
     static constexpr float INVALID_PATH_COST = -1.0f;
     static constexpr float BASE_COST = 0.0f;
-    static constexpr float MAX_TRAVERSABLE_HEIGHT = 48.0f;          // Максимальна висота для ходьби
+    static constexpr float MAX_TRAVERSABLE_HEIGHT = 16.0f;          // Максимальна висота для ходьби
     static constexpr float HEIGHT_THRESHOLD = 24.0f;                // Поріг для збільшеного штрафу
     static constexpr float DOWNWARD_PENALTY_MULTIPLIER = 5.0f;      // Штраф за рух вниз
     static constexpr float HIGH_HEIGHT_PENALTY = 4.0f;              // Штраф за великі висоти
@@ -246,7 +250,7 @@ private:
     static constexpr float LADDER_BASE_COST = 5.0f;                 // Базова вартість драбини
     static constexpr float LADDER_UPWARD_MULTIPLIER = 2.5f;         // Штраф за підйом по драбині
     static constexpr float LADDER_DOWNWARD_MULTIPLIER = 1.5f;       // Штраф за спуск по драбині
-    static constexpr float MAX_LADDER_LENGTH = 256.0f;              // Максимальна довжина драбини
+    static constexpr float MAX_LADDER_LENGTH = 128.0f;              // Максимальна довжина драбини
 
     // Методи для перевірки придатності області
     bool IsAreaSuitableForWandering(INavArea* area) const;
@@ -269,6 +273,7 @@ private:
     bool IsSignificantCost(float cost) const;
 };
 
+// Пошук найкращого вижившого гравця
 class CSearchBestPlayer
 {
 public:
@@ -286,6 +291,7 @@ private:
     float flMaxRange;
 };
 
+// Пошук безпечної області для Witch
 class WitchSafeScan
 {
 public:
@@ -303,6 +309,7 @@ private:
     ConVarRef   z_witch_min_retreat_range;
 };
 
+// Ітерування по виживших
 template<typename T>
 bool ForEachSurvivor(T &func)
 {
@@ -422,6 +429,7 @@ public:
     }
 };
 
+// Пошук найближчого вижившого
 class ClosestSurvivorScan
 {
 public:
@@ -456,6 +464,7 @@ private:
     ConVarRef survivor_skills;
 };
 
+// Дія Witch при смерті
 class WitchDying :public Action< IWitch >
 {
 public:
@@ -520,6 +529,7 @@ private:
     CHandle<ITerrorPlayer> hVictim;
 };
 
+// Дія Witch при вбивстві безпорадної жертви
 class WitchKillIncapVictim : public Action< IWitch >
 {
 public:
@@ -549,6 +559,7 @@ private:
     ConVarRef z_difficulty;
 };
 
+// Дія Witch при відступі
 class WitchRetreat : public Action< IWitch >
 {
 public:
@@ -590,6 +601,7 @@ private:
     ConVarRef m_maxRetreatRange;
 };
 
+// Дія Witch у злобному стані
 class WitchAngry : public Action< IWitch >
 {
 public:
@@ -627,6 +639,7 @@ private:
     ConVarRef z_difficulty;
 };
 
+// Дія Witch при осліпленні
 class WitchBlinded : public Action< IWitch >
 {
 public:
@@ -655,6 +668,7 @@ private:
     CountdownTimers m_timer2;
 };
 
+// Дія Witch при злобному блуканні
 class WitchWanderAngry : public Action< IWitch >
 {
 public:
@@ -691,6 +705,7 @@ private:
 
 };
 
+// Дія Witch при блуканні
 class WitchWander : public Action<IWitch>
 {
 public:
@@ -734,6 +749,7 @@ private:
     ConVarRef z_witch_speed;
 };
 
+// Дія Witch у стані спокою
 class WitchIdle : public Action<IWitch>
 {
 public:
@@ -772,6 +788,7 @@ private:
 
 };
 
+// Дія Witch при нападі
 class WitchAttack : public Action< IWitch >
 {
 public:
@@ -812,6 +829,7 @@ private:
     ConVarRef m_AttackRange;
 };
 
+// Дія Witch при зломленому нападі
 class WitchEvilAttack : public Action< IWitch >
 {
 public:
@@ -852,6 +870,7 @@ private:
     ConVarRef m_AttackRange;
 };
 
+// Дія Witch при штовханні
 class WitchShoved : public Action<IWitch>
 {
 public:
@@ -882,6 +901,7 @@ private:
     ConVarRef z_shove_friend_speed;
 };
 
+// Дія Witch при підпалі
 class WitchBurn : public Action<IWitch>
 {
     float val1;
@@ -905,6 +925,7 @@ public:
 
 };
 
+// Основна поведінка Witch
 class WitchBehavior : public Action<IWitch>
 {
 private:
@@ -930,6 +951,7 @@ public:
     virtual EventDesiredResult< IWitch > OnKilled(IWitch* me, const CTakeDamageInfo& info) override;
 };
 
+// Основна дія Witch
 class WitchMainAction : public Action<IWitch>
 {
     ConVarRef z_witch_burn_time;
@@ -949,6 +971,7 @@ public:
     virtual EventDesiredResult< IWitch > OnInjured(IWitch* me, const CTakeDamageInfo& info) override;
 };
 
+// Основний намір Witch
 class WitchIntention : public IIntention
 {
 public:
@@ -969,8 +992,8 @@ public:
     }
 
 private:
-    IWitch *m_me;
-    Behavior<IWitch> *m_behavior;
+    IWitch *m_me;                   // Закешований вказівник на Witch
+    Behavior<IWitch> *m_behavior;   // Основна поведінка Witch
 };
 
 
