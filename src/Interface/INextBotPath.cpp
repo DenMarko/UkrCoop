@@ -61,21 +61,7 @@ bool Path::ComputePathDetails( INextBot *bot, const Vector &start )
 			to->pos.z = from->area->GetZ( to->pos );
 
 			// if this is a "jump down" connection, we must insert an additional point on the path
-			// float expectedHeightDrop = from->area->GetZ( from->pos ) - to->area->GetZ( to->pos );
-
-			// measure the drop distance relative to the actual slope of the ground
-			Vector fromPos = from->pos;
-			fromPos.z = from->area->GetZ( fromPos );
-
-			Vector toPos = to->pos;
-			toPos.z = to->area->GetZ( toPos );
-
-			Vector groundNormal;
-			from->area->ComputeNormal( &groundNormal );
-
-			Vector alongPath = toPos - fromPos;
-
-			float expectedHeightDrop = -DotProduct( alongPath, groundNormal );
+			float expectedHeightDrop = from->area->GetZ( from->pos ) - to->area->GetZ( to->pos );
 
 			if ( expectedHeightDrop > mover->GetStepHeight() )
 			{
@@ -87,8 +73,8 @@ bool Path::ComputePathDetails( INextBot *bot, const Vector &start )
 				DirectionToVector2D( (Nav_DirType)to->how, &dir );
 
 				// shift top of "jump down" out a bit to "get over the ledge"
-				const float inc = 0.25f * hullWidth; // 10.0f;
-				const float maxPushDist = 75.0f; // 2.0f * hullWidth;
+				const float inc = 0.25f * hullWidth;
+				const float maxPushDist = 75.0f;
 				float halfWidth = hullWidth / 2.0f;
 				float hullHeight = ( body ) ? body->GetCrouchHullHeight() : 1.0f;
 				
@@ -96,16 +82,18 @@ bool Path::ComputePathDetails( INextBot *bot, const Vector &start )
 				for( pushDist = 0.0f; pushDist <= maxPushDist; pushDist += inc )
 				{
 					Vector pos = to->pos + Vector( pushDist * dir.x, pushDist * dir.y, 0.0f );
-					Vector lowerPos = Vector( pos.x, pos.y, toPos.z );
+					Vector lowerPos = Vector( pos.x, pos.y, to->pos.z - stepHeight );
 					
 					trace_t result;
 					NextBotTraceFilterIgnoreActors filter( (IHandleEntity*)bot->GetEntity(), COLLISION_GROUP_NONE );
 					util_TraceHull( pos, lowerPos,
-									Vector( -halfWidth, -halfWidth, stepHeight ), Vector( halfWidth, halfWidth, hullHeight ), 
+									Vector( -halfWidth, -halfWidth, 0.f ),
+									Vector( halfWidth, halfWidth, hullHeight ), 
 									bot->GetBodyInterface()->GetSolidMask(), &filter, &result );
 					
 					if ( result.fraction >= 1.0f )
 					{
+						// found clearance to drop down
 						break;
 					}
 				}
@@ -225,7 +213,8 @@ bool Path::ComputePathDetails( INextBot *bot, const Vector &start )
 		from->area->GetClosestPointOnArea( closeTo, &closeFrom );
 
 		const float separationTolerance = 1.9f * 25.f;
-		if ( (closeFrom - closeTo).AsVector2D().IsLengthGreaterThan( separationTolerance ) && ( closeTo - closeFrom ).AsVector2D().IsLengthGreaterThan( 0.5f * fabs( closeTo.z - closeFrom.z ) ) )
+		if ( (closeFrom - closeTo).AsVector2D().IsLengthGreaterThan( separationTolerance )
+		 && ( closeTo - closeFrom ).AsVector2D().IsLengthGreaterThan( 0.5f * fabs( closeTo.z - closeFrom.z ) ) )
 		{
 			Vector landingPos;
 			to->area->GetClosestPointOnArea( to->pos, &landingPos );
@@ -236,7 +225,7 @@ bool Path::ComputePathDetails( INextBot *bot, const Vector &start )
 			Vector forward = landingPos - launchPos;
 			forward.NormalizeInPlace();
 			
-			const float halfWidth = hullWidth/2.0f;
+			const float halfWidth = hullWidth / 2.0f;
 
 			to->pos = landingPos + forward * halfWidth;
 			
@@ -247,7 +236,7 @@ bool Path::ComputePathDetails( INextBot *bot, const Vector &start )
 
 			InsertSegment( newSegment, i+1 );
 			
-			++i;
+			i += 2;
 		}
 		else if ( (closeTo.z - closeFrom.z) > stepHeight )
 		{
@@ -263,7 +252,7 @@ bool Path::ComputePathDetails( INextBot *bot, const Vector &start )
 
 			InsertSegment( newSegment, i+1 );
 
-			++i;			
+			i += 2;
 		}
 	}
 

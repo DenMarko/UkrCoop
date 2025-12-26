@@ -1,3 +1,8 @@
+/**
+ * Декомпільваний код.
+ * Реалізація логіки простою танка
+ */
+
 #include "MyTank.h"
 #include "Interface/ICheckpoint.h"
 

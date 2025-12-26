@@ -170,7 +170,8 @@ void ITerrorWeapon::SuppressHelpingHands(float duration)
 
     SetHelpingHandState(HELPING_HAND_DISABLED);
 
-    if(!m_suppressTimer.HasStarted() || duration > m_suppressTimer.GetRemainingTime())
+    if(!m_suppressTimer.HasStarted() 
+    || duration > m_suppressTimer.GetRemainingTime())
     {
         m_suppressTimer.Start(duration);
     }

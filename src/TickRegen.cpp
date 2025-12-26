@@ -129,6 +129,10 @@ public:
 	}
 };
 
+/**
+ * Constructor for TickRegen class.
+ * Initializes member variables, sets up Lua bindings, and registers for game events.
+ */
 TickRegen::TickRegen(void) : CGameEventListeners(), m_infoClient(SourceHook::List<CInfoClient*>())
 {
 	m_fLastTickedTime	= 0.0f;
@@ -165,6 +169,10 @@ TickRegen::TickRegen(void) : CGameEventListeners(), m_infoClient(SourceHook::Lis
 	ListenForGameEvent("map_transition");
 }
 
+/**
+ * Destructor for TickRegen class.
+ * Cleans up allocated resources including client info and Lua references.
+ */
 TickRegen::~TickRegen(void)
 {
 	for(auto iClient : m_infoClient)
@@ -177,6 +185,10 @@ TickRegen::~TickRegen(void)
 	delete rClientPutInServer;
 }
 
+/**
+ * Handles level shutdown events by invoking the Lua "OnMapEnd" function if it exists.
+ * It also clears the collision hash and resets the map ticked flag.
+ */
 void TickRegen::LevelShutdown()
 {
 	static luabridge::LuaRef rOnMapEnd = luabridge::getGlobal(g_Sample.GetLuaState(), "OnMapEnd");
@@ -188,6 +200,12 @@ void TickRegen::LevelShutdown()
 	m_bHasMapTickedYet = false;
 }
 
+/**
+ * Handles client disconnection events by removing them from the regeneration list.
+ * Iterates through the client list and deletes the entry corresponding to the disconnected client.
+ *
+ * @param client The index of the disconnected client.
+ */
 void TickRegen::OnClientDisconnected(int client)
 {
 	auto iter = m_infoClient.begin();

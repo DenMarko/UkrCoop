@@ -1,3 +1,8 @@
+/**
+ * Декомпільваний код.
+ * Реалізація дій атаки танка
+ */
+
 #include "MyTank.h"
 #include "Interface/IBaseAbility.h"
 

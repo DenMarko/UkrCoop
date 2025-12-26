@@ -4,6 +4,7 @@
 
 ConVar tank_block_ladder("ukr_tank_block_ladder", "30", FCVAR_CHEAT, "distance to stargered blockera", true, 0.f, true, 200.f);
 
+//====================== TankIntention and TankBehavior ======================//
 TankIntention::TankIntention(INextBot *me) : IIntention(me)
 {
     m_me = nullptr;
@@ -29,10 +30,12 @@ void TankIntention::Update(void)
 {
     if(m_behavior)
     {
-        m_behavior->Update(static_cast<ITank*>(m_me), GetUpdateInterval());
+        m_behavior->Update(m_me, GetUpdateInterval());
     }
 }
+//==================== End TankIntention and TankBehavior ====================//
 
+//====================== TankTankClass Detour ======================//
 class TankTankClass
 {
 public:
@@ -85,7 +88,9 @@ public:
 };
 
 CTankHookCallBack *g_TankHookCallBack = new CTankHookCallBack();
+//==================== End TankTankClass Detour ====================//
 
+//====================== InfectedPathCost ======================//
 InfectedPathCost::InfectedPathCost(INextBot *bot)
     : m_pBot(bot), m_pEnemy(nullptr), m_pLocomotion(nullptr), m_flRandomFactor(1.f)
 {
@@ -119,38 +124,51 @@ InfectedPathCost::InfectedPathCost(ITank *bot)
     }
 }
 
+// Основной метод расчета стоимости пути для зараженного персонажа (Infected) в игре.
 float InfectedPathCost::operator()(INavArea *area, INavArea *fromArea, const INavLadder *ladder, const CFuncElevator *elevator, float length) const
 {
     if(!fromArea)
     {
+        // Якщо немає попередньої області, повертаємо вартість 0.
         return 0.f;
     }
     else
     {
+        // Якщо немає бота, повертаємо вартість -1 (неможливий шлях).
         if(!m_pBot)
             return -1.f;
 
+        // Якщо локомоція бота не визначена або область недоступна для руху, повертаємо вартість -1.
         if(!m_pLocomotion || !m_pLocomotion->IsAreaTraversable((CNavArea *)area))
             return -1.f;
 
+        // Отримуємо кути області для подальших розрахунків.
         Vector vecEast = area->GetCorner(SOUTH_EAST);      // 16 20
         Vector vecWest = area->GetCorner(SOUTH_WEST);      // 4 8
 
+        // Обчислюємо фактор випадковості для вартості шляху.
         float factor = (1.f - m_flRandomFactor);
 
+        // Розрахунок вартості шляху в залежності від того, чи використовується сходи.
         if(!ladder)
         {
             Vector targetPoint;
             Vector closestPoint;
 
+            // Перевіряємо різницю висот між областями.
             area->GetClosestPointOnArea(fromArea->GetCenter(), &closestPoint);
             fromArea->GetClosestPointOnArea(area->GetCenter(), &targetPoint);
             float distance = (closestPoint.z - targetPoint.z);
-            if(distance > m_pLocomotion->GetMaxJumpHeight()) {
+
+            // Якщо висота перевищує максимальну висоту стрибка, шлях неможливий.
+            if(distance > m_pLocomotion->GetMaxJumpHeight())
+            {
                 return -1.f;
             }
 
-            if(length <= 0.f) {
+            // Якщо довжина шляху не визначена, обчислюємо її як відстань між центрами областей.
+            if(length <= 0.f)
+            {
                 length = (area->GetCenter() - fromArea->GetCenter()).Length();
             }
 
@@ -166,11 +184,11 @@ float InfectedPathCost::operator()(INavArea *area, INavArea *fromArea, const INa
                             float scaleFactor = factor * 3.0 + 1.0;
                             if (distance - 24.0 >= 0.0)
                             {
-                                heightPenalty = distance * scaleFactor * (distance * scaleFactor);
+                                heightPenalty = distance * scaleFactor * (distance * scaleFactor);  // квадратичний штраф
                             }
                             else
                             {
-                                heightPenalty = distance * distance;
+                                heightPenalty = distance * distance;                                // квадратичний штраф
                             }
                         }
                     }
@@ -185,6 +203,7 @@ float InfectedPathCost::operator()(INavArea *area, INavArea *fromArea, const INa
                 }
             }
 
+            // Додаємо штраф за горизонтальну відстань, якщо вона перевищує певний поріг.
             float horizontalDist = heightPenalty + closestPoint.DistToSqr(targetPoint);
             if(horizontalDist > 9.f)
             {
@@ -260,60 +279,63 @@ float InfectedPathCost::operator()(INavArea *area, INavArea *fromArea, const INa
         return finalCost;
     }
 }
+//==================== End InfectedPathCost ====================//
 
+//====================== LadderBlockFix ======================//
 LadderBlockFix::LadderBlockFix() : m_pNextBot(nullptr), m_me(nullptr) { }
 
-void LadderBlockFix::Init(ITank *me)
+void LadderBlockFix::Init(ITank *me)    
 {
-    m_me = me;
-    if(m_me) {
-        m_pNextBot = m_me->MyNextBotPointer();
+    m_me = me;                                  // set tank pointer
+    if(m_me) {                                  // if valid tank
+        m_pNextBot = m_me->MyNextBotPointer();  // get NextBot pointer
     }
-    m_timer.Invalidate();
+    m_timer.Invalidate();                       // invalidate timer
 }
 
 void LadderBlockFix::UpdateTimer()
 {
-    if(!m_timer.HasStarted())
+    if(!m_timer.HasStarted())                   // if timer not started
     {
-        m_timer.Start();
+        m_timer.Start();                        // start timer
     }
     else
     {
-        if(m_timer.IsGreaterThen(1.5))
+        if(m_timer.IsGreaterThen(1.5))          // if 1.5 seconds passed
         {
-            if(m_PlayerCollect.Count() > 0)
-                m_PlayerCollect.RemoveAll();
+            if(m_PlayerCollect.Count() > 0)     // and we have processed players
+                m_PlayerCollect.RemoveAll();    // clear processed players list
 
-            m_timer.Invalidate();
+            m_timer.Invalidate();               // invalidate timer to start it again
         }
     }
 }
 
 bool LadderBlockFix::operator()(ITerrorPlayer *pPlayer)
 {
-    if(!m_pNextBot || !m_me) return false;
+    if(!m_pNextBot || !m_me) return false;         // safety check
 
-    if(pPlayer->GetTeamNumber() != 2)
+    if(pPlayer->GetTeamNumber() != 2)   // only humans
         return true;
 
-    if(!pPlayer->IsAlive())
+    if(!pPlayer->IsAlive())             // only alive
         return true;
 
-    if(pPlayer->IsIncapacitated())
+    if(pPlayer->IsIncapacitated())      // no incapacitated
         return true;
 
-    if(m_pNextBot->GetRangeTo((CBaseEntity*)pPlayer) <= tank_block_ladder.GetFloat())
+    if(m_pNextBot->GetRangeTo((CBaseEntity*)pPlayer) <= tank_block_ladder.GetFloat())   // distance check
     {
-        if(!pPlayer->IsStaggering())
+        if(!pPlayer->IsStaggering())    // only staggering
         {
-            if(!m_PlayerCollect.HasElement(pPlayer->GetRefEHandle()))
+            if(!m_PlayerCollect.HasElement(pPlayer->GetRefEHandle()))   // not processed yet
             {
-                pPlayer->OnStaggered(m_me);
-                m_PlayerCollect.AddToTail(pPlayer->GetRefEHandle());
+                pPlayer->OnStaggered(m_me); // stagger player
+                m_PlayerCollect.AddToTail(pPlayer->GetRefEHandle());    // add to processed list
             }
         }
     }
 
     return true;
 }
+//==================== End LadderBlockFix ====================//

@@ -1,3 +1,8 @@
+/**
+ * Декомпільований код.
+ * Реалізація поведінки танка
+ */
+
 #include "MyTank.h"
 
 class PressFireButtonReply : public INextBotReply

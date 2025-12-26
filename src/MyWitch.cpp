@@ -55,7 +55,7 @@ EventDesiredResult<IWitch> WitchMainAction::OnInjured(IWitch *me, const CTakeDam
 {
     if((info.GetDamageType() & /*0x20000187*/ (DMG_CRUSH | DMG_BULLET | DMG_SLASH | DMG_CLUB | DMG_SHOCK | DMG_BUCKSHOT)) != 0)
     {
-        me->AddGesture( ACT_TERROR_FLINCH, true);
+        me->AddGesture( ACT_TERROR_FLINCH );
     }
     return TryContinue();
 }

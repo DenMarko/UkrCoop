@@ -106,7 +106,8 @@ float ITerrorPlayer::GetTimeSinceLastFiredWeapon(void)
 
 bool ITerrorPlayer::IsFiringWeapon(void)
 {
-    return *((float *)this + 1971) > 0.0 && g_pGlobals->curtime - *((float *)this + 1971) < 0.5;
+    IntervalTimers &m_LastFireWeapon = access_member<IntervalTimers>(this, 7880);
+    return m_LastFireWeapon.HasStarted() && m_LastFireWeapon.IsLessThen(0.5);
 }
 
 ITerrorPlayer *ITerrorPlayer::GetOtherResponsibleForMovement()
