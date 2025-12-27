@@ -113,30 +113,27 @@ bool ITerrorPlayer::IsFiringWeapon(void)
 ITerrorPlayer *ITerrorPlayer::GetOtherResponsibleForMovement()
 {
     CHandle<ITerrorPlayer> &m_tongueOwner = access_member<CHandle<ITerrorPlayer>>(this, 8516);
-    auto tongue = m_tongueOwner.Get();
-    if(tongue)
+    if(m_tongueOwner != NULL)
     {
-        return tongue;
+        return m_tongueOwner;
     }
 
     CountdownTimers &m_timer = access_member<CountdownTimers>(this, 8208);
     CHandle<ITerrorPlayer> &m_handle1 = access_member<CHandle<ITerrorPlayer>>(this, 8220);
-    auto value1 = m_handle1.Get();
-    if(m_timer.IsElapsed() && !value1)
+    if(m_timer.IsElapsed() && m_handle1 == NULL)
     {
         CountdownTimers &m_timer1 = access_member<CountdownTimers>(this, 8028);
         CHandle<ITerrorPlayer> &m_handle2 = access_member<CHandle<ITerrorPlayer>>(this, 8040);
-        if(!m_timer1.IsElapsed() && m_handle2.Get())
+        if(!m_timer1.IsElapsed() && m_handle2 != NULL)
         {
             return GetRecentPusher();
         }
 
         CountdownTimers &m_timer2 = access_member<CountdownTimers>(this, 8224);
         CHandle<ITerrorPlayer> &m_handle3 = access_member<CHandle<ITerrorPlayer>>(this, 8236);
-        auto value2 = m_handle3.Get();
         if(!m_timer2.HasStarted() && m_timer2.IsElapsed())
         {
-            if(!value2)
+            if(m_handle3 == NULL)
             {
                 return nullptr;
             }
@@ -146,15 +143,16 @@ ITerrorPlayer *ITerrorPlayer::GetOtherResponsibleForMovement()
                 return nullptr;
             }
         }
-        if(value2)
+
+        if(m_handle3)
         {
-            return value2;
+            return m_handle3;
         }
-        return 0;
+        return nullptr;
     }
 
-    if(!m_timer.IsElapsed() && value1)
-        return value1;
+    if(!m_timer.IsElapsed() && m_handle1 != NULL)
+        return m_handle1;
 
     return nullptr;
 }
@@ -163,9 +161,9 @@ ITerrorPlayer *ITerrorPlayer::GetRecentPusher()
 {
     CountdownTimers &m_timer = access_member<CountdownTimers>(this, 8028);
     CHandle<ITerrorPlayer> &m_handle = access_member<CHandle<ITerrorPlayer>>(this, 8040);
-    if(!m_timer.IsElapsed() && m_handle.Get())
+    if(!m_timer.IsElapsed() && m_handle != NULL)
     {
-        return m_handle.Get();
+        return m_handle;
     }
 
     return nullptr;
@@ -338,8 +336,8 @@ void ITerrorPlayer::OnStaggered(IBaseEntity *pAttacker, const Vector *forceDirec
 
             if(GetTeamNumber() == 3)
             {
-                ConVarRef z_max_stagger_duration("z_max_stagger_duration");
-                ConVarRef z_tank_max_stagger_distance("z_tank_max_stagger_distance");
+                static ConVarRef z_max_stagger_duration("z_max_stagger_duration");
+                static ConVarRef z_tank_max_stagger_distance("z_tank_max_stagger_distance");
 
                 m_staggerTimer.Start(z_max_stagger_duration.GetFloat());
                 if(z_tank_max_stagger_distance.GetFloat() != m_staggerDist)
@@ -350,8 +348,8 @@ void ITerrorPlayer::OnStaggered(IBaseEntity *pAttacker, const Vector *forceDirec
             }
             else if(GetTeamNumber() == 2)
             {
-                ConVarRef survivor_max_tongue_stagger_duration("survivor_max_tongue_stagger_duration");
-                ConVarRef survivor_max_tongue_stagger_distance("survivor_max_tongue_stagger_distance");
+                static ConVarRef survivor_max_tongue_stagger_duration("survivor_max_tongue_stagger_duration");
+                static ConVarRef survivor_max_tongue_stagger_distance("survivor_max_tongue_stagger_distance");
 
                 m_staggerTimer.Start(survivor_max_tongue_stagger_duration.GetFloat());
                 if(survivor_max_tongue_stagger_distance.GetFloat() != m_staggerDist)
@@ -415,6 +413,7 @@ void ITerrorPlayer::StopRevivingSomeone(bool playSound)
         {
             GetActiveTerrorWeapon()->SuppressHelpingHands(0.0f);
         }
+
         DoAnimationEvent(static_cast<PlayerAnimEvent_t>(17));
         pTarget->DoAnimationEvent(static_cast<PlayerAnimEvent_t>(19));
 
@@ -479,7 +478,7 @@ void ITerrorPlayer::StopHealingSomeone(void)
 
     CHandle<ITerrorPlayer> &m_healTarget = access_member<CHandle<ITerrorPlayer>>(this, 1596*4);
     NetworkStateChanged(6384);
-    m_healTarget = NULL;
+    m_healTarget.Term();
 }
 
 void ITerrorPlayer::OnPounceEnded(void)
@@ -491,7 +490,7 @@ void ITerrorPlayer::OnPounceEnded(void)
     if(m_isAttemptingToPounce && !m_stunTimer.IsElapsed())
             EmitSound("HunterZombie.Pounce.Cancel");
 
-    // Якщо був interrupted pounce - зберігаємо framecount
+    // Update last attacked time to avoid being targeted immediately again
     if(access_member<bool>(this, 10885))
         access_member<int>(this, 2732*4) = g_pGlobals->framecount;
 
@@ -612,8 +611,8 @@ void ITerrorPlayer::ReleaseTongueVictim(void)
 
 void ITerrorPlayer::SetMainActivity(Activity activity, bool bRestart)
 {
-    CountdownTimers &m_timer_8068 = access_member<CountdownTimers>(this, 8068);
-    CountdownTimers &m_timer_8112 = access_member<CountdownTimers>(this, 8112);
+    CountdownTimers &m_staggerTimer = access_member<CountdownTimers>(this, 8068);
+    CountdownTimers &m_tugTimer = access_member<CountdownTimers>(this, 8112);
     float &m_mainSequenceStartTime = access_member<float>(this, 6300);
 
     MDLCACHE_CRITICAL_SECTION_(g_pMDLCache);
@@ -626,10 +625,10 @@ void ITerrorPlayer::SetMainActivity(Activity activity, bool bRestart)
     if(IsActivityFinished())
         flCycle = 1.f;
 
-    if(m_timer_8068.IsElapsed())
+    if(m_staggerTimer.GetRemainingTime() > 0.f)
         CancelStagger();
 
-    if(m_timer_8112.IsElapsed())
+    if(m_tugTimer.GetRemainingTime() > 0.f)
         CancelTug();
 
     SetSequence(nSeqence);
@@ -866,7 +865,41 @@ void ITerrorPlayer::OnStopHangingFromTongue(int flags)
 
 bool ITerrorPlayer::IsMotionControlledXY(Activity activity)
 {
-    return g_CallHelper->IsMotionControlledXY(this, activity);
+    switch (activity)
+    {
+        case ACT_TERROR_SHOVED_FORWARD:
+        case ACT_TERROR_SHOVED_BACKWARD:
+        case ACT_TERROR_SHOVED_LEFTWARD:
+        case ACT_TERROR_SHOVED_RIGHTWARD:
+        case ACT_TERROR_TUGGED_FORWARD:
+        case ACT_TERROR_TUGGED_BACKWARD:
+        case ACT_TERROR_TUGGED_LEFTWARD:
+        case ACT_TERROR_TUGGED_RIGHTWARD:
+        case ACT_TERROR_DIE_FROM_STAND:
+        case ACT_TERROR_DIE_WHILE_RUNNING:
+        case ACT_TERROR_LEDGE_CLIMB:
+        case ACT_TERROR_LEDGE_CLIMB_TO_CROUCH:
+        case ACT_TERROR_CLIMB_36_FROM_STAND:
+        case ACT_TERROR_CLIMB_70_FROM_STAND:
+        case ACT_TERROR_CLIMB_115_FROM_STAND:
+        case ACT_TERROR_CLIMB_130_FROM_STAND:
+        case ACT_TERROR_CLIMB_150_FROM_STAND:
+        case ACT_TERROR_CLIMB_166_FROM_STAND:
+        case ACT_TERROR_HUNTER_POUNCE_KNOCKOFF_L:
+        case ACT_TERROR_HUNTER_POUNCE_KNOCKOFF_R:
+        case ACT_TERROR_HUNTER_POUNCE_KNOCKOFF_BACKWARD:
+        case ACT_TERROR_HUNTER_POUNCE_KNOCKOFF_FORWARD:
+        case ACT_TERROR_HULK_VICTORY:
+        case ACT_TERROR_HULK_VICTORY_B:
+        case ACT_TERROR_RAGE_AT_ENEMY:
+        case ACT_TERROR_RAGE_AT_KNOCKDOWN:
+            return true;
+
+        default:
+            break;
+    }
+
+    return false;
 }
 
 bool ITerrorPlayer::IsMotionControlledZ(Activity activity)

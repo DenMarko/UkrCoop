@@ -296,7 +296,6 @@ HL2::~HL2()
     s_IsLineOfSightBetweenTwoEntitiesClear.Shutdown();
     s_Director_IsTransitioned.Shutdown();
     s_GetTransitionedLandmarkName.Shutdown();
-    s_IsMotionControlledXY.Shutdown();
     s_IsMotionControlledZ.Shutdown();
     s_ActivityList_IndexForName.Shutdown();
     s_RegisterPrivateActivity.Shutdown();
@@ -1698,18 +1697,6 @@ bool HL2::Director_IsTransitioned()
         }
     }
 
-    return false;
-}
-
-bool HL2::IsMotionControlledXY(IBaseEntity *pThis, Activity activity)
-{
-    if(SetupIsMotionControlledXY())
-    {
-        bool bResult = false;
-        VCaller::ArgcBuffer<void*, int> param(pThis, activity);
-        s_IsMotionControlledXY->Execute(param, &bResult);
-        return bResult;
-    }
     return false;
 }
 
