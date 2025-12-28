@@ -865,6 +865,7 @@ void ITerrorPlayer::OnStopHangingFromTongue(int flags)
 
 bool ITerrorPlayer::IsMotionControlledXY(Activity activity)
 {
+    bool IsMotionXY = false;
     switch (activity)
     {
         case ACT_TERROR_SHOVED_FORWARD:
@@ -893,18 +894,45 @@ bool ITerrorPlayer::IsMotionControlledXY(Activity activity)
         case ACT_TERROR_HULK_VICTORY_B:
         case ACT_TERROR_RAGE_AT_ENEMY:
         case ACT_TERROR_RAGE_AT_KNOCKDOWN:
-            return true;
-
-        default:
+        {
+            IsMotionXY = true;
             break;
+        }
+        default:
+        {
+            IsMotionXY = false;
+            break;
+        }
     }
 
-    return false;
+    return IsMotionXY;
 }
 
 bool ITerrorPlayer::IsMotionControlledZ(Activity activity)
 {
-    return g_CallHelper->IsMotionControlledZ(this, activity);
+    bool bIsMotionZ = false;
+    switch(activity)
+    {
+        case ACT_TERROR_LEDGE_CLIMB:
+        case ACT_TERROR_LEDGE_CLIMB_TO_CROUCH:
+        case ACT_TERROR_CLIMB_36_FROM_STAND:
+        case ACT_TERROR_CLIMB_70_FROM_STAND:
+        case ACT_TERROR_CLIMB_115_FROM_STAND:
+        case ACT_TERROR_CLIMB_130_FROM_STAND:
+        case ACT_TERROR_CLIMB_150_FROM_STAND:
+        case ACT_TERROR_CLIMB_166_FROM_STAND:
+        {
+            bIsMotionZ = true;
+            break;
+        }
+        default:
+        {
+            bIsMotionZ = false;
+            break;
+        }    
+    }
+
+    return bIsMotionZ;
 }
 
 void ITerrorPlayer::AbilityDebug(ITerrorPlayer *pVictim, const char *msg, ...)

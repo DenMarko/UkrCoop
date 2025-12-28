@@ -243,7 +243,7 @@ private:
     const int GetDifficulty() const;
 
     CHandle<ITerrorPlayer> m_hPlayer;       // Поточна цільова гравець
-    DirectChasePath m_path;               // Шлях переслідування
+    DirectChasePath m_path;                 // Шлях переслідування
 
     IntervalTimers m_attackTimer;           // Таймер атаки (використовується в OnStart та TryToThrowRock)
     CountdownTimers m_unusedTimer;          // Або можна видалити

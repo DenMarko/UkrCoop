@@ -296,7 +296,6 @@ HL2::~HL2()
     s_IsLineOfSightBetweenTwoEntitiesClear.Shutdown();
     s_Director_IsTransitioned.Shutdown();
     s_GetTransitionedLandmarkName.Shutdown();
-    s_IsMotionControlledZ.Shutdown();
     s_ActivityList_IndexForName.Shutdown();
     s_RegisterPrivateActivity.Shutdown();
     s_CEventQueue_AddEvent.Shutdown();
@@ -1695,19 +1694,6 @@ bool HL2::Director_IsTransitioned()
             s_Director_IsTransitioned->Execute(pParam, &bResult);
             return bResult;
         }
-    }
-
-    return false;
-}
-
-bool HL2::IsMotionControlledZ(IBaseEntity *pThis, Activity activity)
-{
-    if(SetupIsMotionControlledZ())
-    {
-        bool bResult = false;
-        VCaller::ArgcBuffer<void*, int> param(pThis, activity);
-        s_IsMotionControlledZ->Execute(param, &bResult);
-        return bResult;
     }
 
     return false;

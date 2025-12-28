@@ -489,15 +489,6 @@ bool HL2::SetupGetTransitionedLandmarkName()
     END_SETUP(s_GetTransitionedLandmarkName, CallConv_ThisCall, &ret, nullptr, 0)
 }
 
-bool HL2::SetupIsMotionControlledZ()
-{
-    BEGIN_SETUP(s_IsMotionControlledZ, IsMotionControlledZ)
-        PassInfo ret, param;
-        SetParam(&param, sizeof(int));
-        SetParam(&ret, sizeof(bool));
-    END_SETUP(s_IsMotionControlledZ, CallConv_ThisCall, &ret, &param, 1)
-}
-
 bool HL2::SetupGetIndexForName()
 {
     BEGIN_SETUP(s_ActivityList_IndexForName, ActivityList_IndexForName);

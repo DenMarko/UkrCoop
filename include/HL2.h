@@ -406,7 +406,6 @@ public:
     virtual IPhysicsObject *PhysModelCreateOBB(IBaseEntity *pEntity, const Vector &mins, const Vector &maxs, const Vector &origin, const QAngle &angle, bool isStatic) = 0;
     virtual bool IsLineOfSightBetweenTwoEntitiesClear(IBaseEntity*pSrcEntity, EEntityOffsetMode_t nSrcOffsetMode, IBaseEntity *pDestEntity, EEntityOffsetMode_t nDestOffsetMode, IBaseEntity *pSkipEntity, int nCollisionGroup, unsigned int nTraceMask, ShouldHitFunc_t pTraceFilterCallback, float flMinimumUpdateInterval = 0.2 ) = 0;
     virtual char* GetTransitionedLandmarkName() = 0;
-    virtual bool IsMotionControlledZ( IBaseEntity* pThis, Activity activity ) = 0;
     virtual Activity GetIndexForName(const char *pszActivityName) = 0;
     virtual Activity RegisterPrivateActivity(const char* pszActivityName) = 0;
     virtual void CEventQueueAdd(const char* target, const char* targetInput, variant_t Value, float fireDelay, IBaseEntity* pActivator, IBaseEntity* pCaller, int outputID) = 0;
@@ -494,7 +493,6 @@ private:
     VCaller::CCallHelper s_IsLineOfSightBetweenTwoEntitiesClear;
     VCaller::CCallHelper s_Director_IsTransitioned;
     VCaller::CCallHelper s_GetTransitionedLandmarkName;
-    VCaller::CCallHelper s_IsMotionControlledZ;
     VCaller::CCallHelper s_ActivityList_IndexForName;
     VCaller::CCallHelper s_RegisterPrivateActivity;
     VCaller::CCallHelper s_CEventQueue_AddEvent;
@@ -596,7 +594,6 @@ public:
     virtual bool Director_IsTransitioned();
 
     virtual int GetHasAnySurvivorLeftSafeArea();
-    virtual bool IsMotionControlledZ( IBaseEntity* pThis, Activity activity );
 
     virtual void OnSpawnITMob(int mobSize);
     virtual void OnMobRash();
@@ -704,7 +701,6 @@ private:
     bool SetupIsLineOfSightBetweenTwoEntitiesClear();
     bool SetupDirector_IsTransitioned();
     bool SetupGetTransitionedLandmarkName();
-    bool SetupIsMotionControlledZ();
     bool SetupGetIndexForName();
     bool SetupRegisterPrivateActivity();
     bool SetupEventQueueAdd();
