@@ -40,7 +40,7 @@ public:
     virtual int             CanPlayerMove(void)const  = 0;
     virtual void            OnOwnerTakeDamage(const CTakeDamageInfo &info) = 0;
     virtual void            Operator_HandleAnimEvent(animevent_t *, IBaseCombatCharacter *) = 0;
-    virtual void            OnStunned(float) = 0;
+    virtual void            OnStunned(float duration) = 0;
     virtual int             HandleCustomCollision(CBaseEntity *,Vector const&,Vector const&,CGameTrace *,CMoveData *) = 0;
     virtual void            OnDestroy(void) = 0;
     virtual void            AbilityDebug(char const* msg, ...) = 0;

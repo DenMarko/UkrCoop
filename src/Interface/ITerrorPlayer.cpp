@@ -1,6 +1,9 @@
 ﻿#include "ITerrorPlayer.h"
 #include "IMusic.h"
 #include "IBaseAbility.h"
+#include "IPlayerAnimState.h"
+#include "../MemberFunctionWrapper.h"
+#include "../CUserMessage.h"
 
 template<typename T>
 bool ForEachSurvivor(T &func)
@@ -276,7 +279,7 @@ void ITerrorPlayer::OnStaggered(IBaseEntity *pAttacker, const Vector *forceDirec
             ClearUseEntity();
             SetPushEntity(nullptr);
             OnPounceEnded();
-            ReleaseTongueVictim();
+            ReleaseTongueVictim(false);
 
             if(GetActiveTerrorWeapon())
             {
@@ -370,6 +373,300 @@ void ITerrorPlayer::OnStaggered(IBaseEntity *pAttacker, const Vector *forceDirec
                 NetworkStateChanged(8080);
                 m_staggerStart = GetAbsOrigin();
             }
+        }
+    }
+}
+
+void ITerrorPlayer::OnShovedBySurvivor(ITerrorPlayer *pPusher, const Vector &force)
+{
+    if(IsPlayingDeathAnim())
+        return;
+
+    bool isHunterPouncing = false;
+    if(pPusher)
+    {
+        CHandle<ITerrorPlayer> &m_pounceAttacker = access_member<CHandle<ITerrorPlayer>>(pPusher, 2717*4);
+        if(m_pounceAttacker != NULL)
+            isHunterPouncing = true;
+    }
+
+    Vector &m_staggerDir = access_member<Vector>(this, 8092);
+    static ConVarRef z_tank_max_stagger_duration("z_tank_max_stagger_duration");
+    static ConVarRef z_stagger_immunity_time("z_stagger_immunity_time");
+
+    StopRevivingSomeone(true);
+    Vector shoveDir = force;
+    if(shoveDir.LengthSqr() > 10000.f)
+    {
+        shoveDir.NormalizeInPlace();
+        shoveDir *= 100.f;
+    }
+
+    Vector forceDir = shoveDir;
+    forceDir.z = 0.f;
+    forceDir.NormalizeInPlace();
+    if(forceDir != m_staggerDir)
+    {
+        NetworkStateChanged(8092);
+        m_staggerDir = forceDir;
+    }
+
+    QAngle angle;
+    VectorAngles(m_staggerDir, angle);
+    QAngle eyeAngles = EyeAngles();
+
+    if(IsRenderYawOverridden())
+    {
+        eyeAngles.y = access_member<float>(this, 6416);     // m_overriddenRenderYaw
+        SnapEyeAngles(eyeAngles);
+    }
+
+    float anglDiff = AngleNormalize(eyeAngles.y - angle.y);
+    Activity shoveActivity = ACT_INVALID;
+
+    if(anglDiff <= 45.f && anglDiff >= -45.f)
+    {
+        shoveActivity = ACT_TERROR_SHOVED_FORWARD;
+    }
+    else if(anglDiff > 45.f && anglDiff < 135.f)
+    {
+        shoveActivity = ACT_TERROR_SHOVED_RIGHTWARD;
+    }
+    else if(anglDiff < -45.f)
+    {
+        shoveActivity = ACT_TERROR_SHOVED_BACKWARD;
+    }
+    else
+    {
+        shoveActivity = (anglDiff > -135.f) ? ACT_TERROR_SHOVED_BACKWARD : ACT_TERROR_SHOVED_LEFTWARD;
+    }
+
+    if(GetTeamNumber() == 3)
+    {
+        if(GetClass() == ZombieClassHunter)
+        {
+            int &m_lastPouncheTime = access_member<int>(pPusher, 2732*4);
+            if(m_lastPouncheTime == g_pGlobals->framecount)
+            {
+                m_lastPouncheTime = -1;
+
+                if(shoveActivity == ACT_TERROR_SHOVED_RIGHTWARD)
+                    shoveActivity = ACT_TERROR_HUNTER_POUNCE_KNOCKOFF_R;
+                else if(shoveActivity == ACT_TERROR_SHOVED_BACKWARD)
+                    shoveActivity = ACT_TERROR_HUNTER_POUNCE_KNOCKOFF_BACKWARD;
+                else if(shoveActivity == ACT_TERROR_SHOVED_FORWARD)
+                    shoveActivity = ACT_TERROR_HUNTER_POUNCE_KNOCKOFF_FORWARD;
+                else
+                    shoveActivity = ACT_TERROR_HUNTER_POUNCE_KNOCKOFF_L;
+            }
+        }
+    }
+
+    if(isHunterPouncing)
+    {
+        if(GetTeamNumber() == 3 && GetClass() == ZombieClassHunter)
+        {
+            shoveActivity = ACT_TERROR_SHOVED_FORWARD;
+        }
+    }
+
+    CountdownTimers &m_timer8056 = access_member<CountdownTimers>(this, 8056);
+    if(m_timer8056.HasStarted())
+    {
+        m_timer8056.Invalidate();
+    }
+
+    float &m_staggerDist = access_member<float>(this, 8104);
+    if(m_staggerDist != z_tank_max_stagger_duration.GetFloat())
+    {
+        NetworkStateChanged(8104);
+        m_staggerDist = z_tank_max_stagger_duration.GetFloat();
+    }
+
+    Vector &m_staggerStart = access_member<Vector>(this, 8080);
+    if(m_staggerStart != GetAbsOrigin())
+    {
+        NetworkStateChanged(8080);
+        m_staggerStart = GetAbsOrigin();
+    }
+
+    bool &m_isAttemptingToPounce = access_member<bool>(this, 10884);
+    if(m_isAttemptingToPounce)
+    {
+        NetworkStateChanged(10884);
+        m_isAttemptingToPounce = false;
+    }
+
+    float stunDuration = 0.f;
+    bool plaedStunAnimation = false;
+
+    if(!m_timer8056.HasStarted())
+    {
+        if(!access_member<bool>(this, 11192))
+        {
+            if(GetGroundEntity())
+            {
+                SetMainActivity(shoveActivity);
+                IPlayerAnimState *pAnimState = access_member<IPlayerAnimState*>(this, 6024);
+                pAnimState->OnStaggerStart();
+                pAnimState->ClearAccumulatedMotion();
+                plaedStunAnimation = true;
+            }
+            else
+            {
+                access_member<Activity>(this, 8108) = shoveActivity;
+                Vector &m_shoveForce = access_member<Vector>(this, 8472);
+                if(m_shoveForce != shoveDir)
+                {
+                    NetworkStateChanged(8472);
+                    m_shoveForce = shoveDir;
+                }
+
+                if(pPusher)
+                {
+                    access_member<CHandle<ITerrorPlayer>>(this, 8236) = pPusher->GetRefEHandle();
+                    CountdownTimers &m_timer8224 = access_member<CountdownTimers>(this, 8224);
+                    m_timer8224.Start(1.0);
+                }
+                else
+                {
+                    access_member<CHandle<ITerrorPlayer>>(this, 8236).Term();
+                    CountdownTimers &m_timer8224 = access_member<CountdownTimers>(this, 8224);
+                    m_timer8224.Invalidate();
+                }
+
+                SetGroundEntity(NULL);
+                plaedStunAnimation = false;
+            }
+
+            stunDuration = z_stagger_immunity_time.GetFloat();
+            if(stunDuration > 0.f)
+            {
+                CountdownTimers &m_timer8056 = access_member<CountdownTimers>(this, 8056);
+                m_timer8056.Start(stunDuration);
+            }
+        }
+    }
+
+
+    if(GetTeamNumber() == 3 && GetClass() == ZombieClassTank)
+    {
+        static ConVarRef z_tank_stagger_fade_alpha("z_tank_stagger_fade_alpha");
+        static ConVarRef z_tank_stagger_fade_duration("z_tank_stagger_fade_duration");
+        color32 color = { 255, 255, 255, 0 };
+        color.a = z_tank_stagger_fade_alpha.GetInt();
+        UTIL_ScreenFade(this, color, z_tank_stagger_fade_duration.GetFloat(), 0.f, 1);
+    }
+    else
+    {
+        static ConVarRef z_max_stagger_duration("z_max_stagger_duration");
+        static ConVarRef z_max_hunter_pounce_stagger_duration("z_max_hunter_pounce_stagger_duration");
+        stunDuration = SequenceDuration(GetSequence());
+        if(z_max_stagger_duration.GetFloat() > 0.0f && stunDuration > z_max_stagger_duration.GetFloat() )
+        {
+            stunDuration = z_max_stagger_duration.GetFloat();
+        }
+
+        extern bool IsVersusMode();
+        if(isHunterPouncing && IsVersusMode())
+        {
+            stunDuration = z_max_hunter_pounce_stagger_duration.GetFloat();
+        }
+    }
+
+    if(plaedStunAnimation)
+    {
+        OnStunned(stunDuration);
+
+        CountdownTimers &m_timer8068 = access_member<CountdownTimers>(this, 8068);
+        m_timer8068.Start(stunDuration);
+    }
+
+    DoAnimationEvent(static_cast<PlayerAnimEvent_t>(33));
+    IBaseAbility *pAbility = GetCustomAbility();
+    if(pAbility)
+    {
+        if(GetTeamNumber() == 3)
+        {
+            if(GetClass() == ZombieClassTank)
+                pAbility->OnStunned(z_tank_max_stagger_duration.GetFloat());
+            else if(GetClass() == ZombieClassHunter)
+                pAbility->OnStunned(0.5f);
+        }
+    }
+
+    bool shouldTrackShoveTime = !isHunterPouncing;
+    if(!shouldTrackShoveTime)
+    {
+        if(GetTeamNumber() == 3)
+        {
+            if(GetClass() == ZombieClassHunter || GetClass() == ZombieClassSmoker)
+            {
+                shouldTrackShoveTime = false;
+            }
+        }
+    }
+
+    float &m_bashedStart = access_member<float>(this, 10964);
+    if(m_bashedStart != g_pGlobals->curtime)
+    {
+        NetworkStateChanged(10964);
+        m_bashedStart = g_pGlobals->curtime;
+    }
+
+    CUtlVector<float> &m_shoveTimeHistory = access_member<CUtlVector<float>>(this, 8452);
+    int &m_skill = access_member<int>(pPusher, 11072);
+    int &m_consecutiveShoveCount = access_member<int>(this, 0x2100);
+    bool shouldDamage = false;
+
+    m_shoveTimeHistory.AddToTail(g_pGlobals->curtime);
+
+    if(m_skill == 7)
+    {
+        m_consecutiveShoveCount = 1;
+        shouldDamage = (m_shoveTimeHistory.Count() >= 1);
+    }
+    else
+    {
+        shouldDamage = (m_shoveTimeHistory.Count() >= m_consecutiveShoveCount);
+    }
+
+    if(GetTeamNumber() == 3)
+    {
+        if(GetClass() == ZombieClassBommer 
+        || GetClass() == ZombieClassSmoker 
+        || GetClass() == ZombieClassHunter)
+        {
+            CTakeDamageInfoHack damageInfo(this, pPusher, 250.f, DMG_CLUB);
+            
+            if(shouldDamage)
+            {
+                trace_t tr;
+                memset(&tr, 0, sizeof(tr));
+
+                Vector vecCenter = WorldSpaceCenter();
+
+                tr.startpos = vecCenter;
+                tr.endpos = vecCenter;
+
+                tr.plane.normal = -forceDir;
+                tr.plane.dist = DotProduct(-forceDir, vecCenter);
+                tr.plane.type = PLANE_ANYZ;
+                tr.plane.signbits = SignbitsForPlane(&tr.plane);
+
+                tr.fraction = 1.f;
+                tr.m_pEnt = (CBaseEntity*)this;
+
+                Vector vecShotPos = pPusher->Weapon_ShootPosition();
+                CalculateMeleeDamageForce(&damageInfo, forceDir, vecShotPos, 0.2f);
+                g_CallHelper->ClearMultiDamages();
+                DispatchTraceAttack(damageInfo, forceDir, &tr);
+                g_CallHelper->ApplyMultiDamages();
+
+                return;
+            }
+
+            EmitInfectedPainSound(damageInfo);
         }
     }
 }
@@ -574,39 +871,45 @@ void ITerrorPlayer::OnPounceEnded(void)
     }
 }
 
-void ITerrorPlayer::ReleaseTongueVictim(void)
+void ITerrorPlayer::ReleaseTongueVictim(bool force)
 {
     CHandle<IBaseAbility> &m_customAbility = access_member<CHandle<IBaseAbility>>(this, 1934*4);
 
-    bool bResetTougle = false;
     ITerrorPlayer* pVictim = GetTongueVictim();
-    if( pVictim != nullptr)
+    if( !force && pVictim == nullptr)
     {
-        ITongue* pAbility = nullptr;
-        if(m_customAbility != NULL)
-        {
-            pAbility = access_dynamic_cast<ITongue>(m_customAbility.Get(), "CTongue");
-            if(pAbility)
-            {
-                pAbility->ResetTongueTimer();
-                bResetTougle = true;
-            }
-        }
-
-        CTongueRelease *tongue_release = new CTongueRelease;
-
-        float distance = 0.f;
-        if(bResetTougle)
-        {
-            distance = pVictim->GetAbsOrigin().DistTo(pAbility->GetLastVictimPosition());
-        }
-
-        tongue_release->Set(this, pVictim, distance);
-        delete tongue_release;
-
-        pVictim->OnReleasedByTongue();
-        OnReleasingWithTongue();
+        return;
     }
+
+    bool bResetTougle = false;
+    ITongue* pAbility = nullptr;
+    if(m_customAbility != NULL)
+    {
+        pAbility = access_dynamic_cast<ITongue>(m_customAbility.Get(), "CTongue");
+        if(pAbility)
+        {
+            pAbility->ResetTongueTimer();
+            bResetTougle = true;
+        }
+    }
+
+    CTongueRelease *tongue_release = new CTongueRelease;
+
+    float distance = 0.f;
+    if(bResetTougle)
+    {
+        distance = pVictim->GetAbsOrigin().DistTo(pAbility->GetLastVictimPosition());
+    }
+
+    tongue_release->Set(this, pVictim, distance);
+    delete tongue_release;
+
+    if(pVictim)
+    {
+        pVictim->OnReleasedByTongue();
+    }
+
+    OnReleasingWithTongue();
 }
 
 void ITerrorPlayer::SetMainActivity(Activity activity, bool bRestart)
@@ -712,7 +1015,7 @@ void ITerrorPlayer::CancelTug(void)
 
 void ITerrorPlayer::OnReleasedByTongue(void)
 {
-    ConVarRef tongue_release_fatigue_penalty("tongue_release_fatigue_penalty");
+    static ConVarRef tongue_release_fatigue_penalty("tongue_release_fatigue_penalty");
     IntervalTimers &m_tongueVictimTimer = access_member<IntervalTimers>(this, 8520);
     CountdownTimers& m_timer_8208 = access_member<CountdownTimers>(this, 8208);
     CHandle<ITerrorPlayer> &m_tongueOwner = access_member<CHandle<ITerrorPlayer>>(this, 8516);
@@ -863,6 +1166,126 @@ void ITerrorPlayer::OnStopHangingFromTongue(int flags)
     }
 }
 
+void ITerrorPlayer::OnStunned(float duration)
+{
+    if(GetTeamNumber() == 3
+    && GetClass() == ZombieClassBommer
+    && GetFallVelocity() != 0.0)
+    {
+        SetFallVelocity(0.f);
+    }
+
+    CountdownTimers &m_timer8280 = access_member<CountdownTimers>(this, 8280);
+    CountdownTimers &m_timer8292 = access_member<CountdownTimers>(this, 8292);
+
+    if(m_timer8280.IsElapsed())
+    {
+        m_timer8280.Start(duration);
+        IBaseAbility* pAbility = GetCustomAbility();
+        if(pAbility)
+        {
+            pAbility->OnStunned(duration);
+        }
+
+        ITerrorWeapon *pWeapon = GetActiveTerrorWeapon();
+        if(pWeapon)
+        {
+            pWeapon->OnStunned(duration);
+        }
+    }
+
+    static ConVarRef survivor_stun_immunity_duration("survivor_stun_immunity_duration");
+    m_timer8292.Start(survivor_stun_immunity_duration.GetFloat());
+
+    OnPounceEnded();
+
+    CHandle<ITerrorPlayer>& m_tongueVictim = access_member<CHandle<ITerrorPlayer>>(this, 8512);
+    if(m_tongueVictim != NULL)
+    {
+        m_tongueVictim->AbilityDebug(m_tongueVictim, "Tongue letting go on getting bashed.");
+    }
+
+    ReleaseTongueVictim(false);
+}
+
+void ITerrorPlayer::EmitInfectedPainSound(const CTakeDamageInfo &info)
+{
+    CountdownTimers &m_timer7708 = access_member<CountdownTimers>(this, 7708);
+    if(m_timer7708.IsElapsed())
+    {
+        m_timer7708.Start(0.7f);
+
+        switch (GetClass())
+        {
+            case ZombieClassSmoker:
+            {
+                if((info.GetDamageType() & 0x82) != 0)
+                    Vocalize("SmokerZombie.PainShort", 0.f, 0.f);
+                else
+                    Vocalize("SmokerZombie.Pain", 0.f, 0.f);
+
+                break;
+            }
+            case ZombieClassBommer:
+            {
+                if((info.GetDamageType() & 0x82) != 0)
+                    Vocalize("BoomerZombie.PainShort", 0.f, 0.f);
+                else
+                    Vocalize("BoomerZombie.Pain", 0.f, 0.f);
+
+                break;
+            }
+            case ZombieClassHunter:
+            {
+                if((info.GetDamageType() & 0x82) != 0)
+                    Vocalize("HunterZombie.PainShort", 0.f, 0.f);
+                else
+                    Vocalize("HunterZombie.Pain", 0.f, 0.f);
+
+                break;
+            }
+            case ZombieClassTank:
+            {
+                if(!IsIncapacitated())
+                {
+                    Vocalize("HulkZombie.Pain", 0.7f, 0.f);
+                }
+                break;
+            }
+        }
+    }
+}
+
+void ITerrorPlayer::Vocalize(const char *szName, float flDuration, float val2)
+{
+    CountdownTimers &m_timer7696 = access_member<CountdownTimers>(this, 7696);
+
+    if(flDuration < 0)
+    {
+        EmitSound(szName);
+    }
+    else if(flDuration == 0)
+    {
+        float _flDuration = 0.0f;
+        EmitSound(szName, 0.f, &_flDuration);
+
+        if(flDuration > _flDuration)
+            m_timer7696.Start(flDuration + 0.2f);
+        else
+            m_timer7696.Start(_flDuration + 0.2f);
+    }
+    else if(flDuration > 0)
+    {
+        EmitSound(szName);
+        m_timer7696.Start(flDuration);
+    }
+
+    if(val2 > 0.f)
+    {
+        g_CallHelper->CSoundEnt_InsertSound(8, GetAbsOrigin(), 2048, val2, (CBaseEntity*)this, 10);
+    }
+}
+
 bool ITerrorPlayer::IsMotionControlledXY(Activity activity)
 {
     bool IsMotionXY = false;
@@ -933,6 +1356,46 @@ bool ITerrorPlayer::IsMotionControlledZ(Activity activity)
     }
 
     return bIsMotionZ;
+}
+
+bool ITerrorPlayer::IsRenderYawOverridden()
+{
+    Activity &activity = access_member<Activity>(this, 1615*4);
+    CHandle<ITerrorPlayer> &m_pounceVictim = access_member<CHandle<ITerrorPlayer>>(this, 10864);
+    CHandle<ITerrorPlayer> &m_pounceAttacker = access_member<CHandle<ITerrorPlayer>>(this, 10868);
+    CHandle<ITerrorPlayer> &m_tongueOwner = access_member<CHandle<ITerrorPlayer>>(this, 8516);
+    CHandle<ITerrorPlayer> &m_tongueVictim = access_member<CHandle<ITerrorPlayer>>(this, 8512);
+    CHandle<ITerrorPlayer> &m_healTarget = access_member<CHandle<ITerrorPlayer>>(this, 1596*4);
+    CHandle<ITerrorPlayer> &m_reviveTarget = access_member<CHandle<ITerrorPlayer>>(this, 1765*4);
+
+    if(activity >= 1077 && (activity <= 1079 || (activity - 1258) <= 3))
+        return true;
+
+    if(m_pounceVictim != NULL)
+        return true;
+
+    if(m_pounceAttacker != NULL)
+        return true;
+
+    if(IsIncapacitated() )
+        return true;
+
+    if( m_tongueOwner != NULL)
+        return true;
+
+    if(m_tongueVictim != NULL)
+        return true;
+
+    if(IsMotionControlledZ(activity))
+        return true;
+
+    if(m_healTarget != NULL && m_healTarget == this)
+        return true;
+
+    if(m_reviveTarget != NULL)
+        return true;
+
+    return false;
 }
 
 void ITerrorPlayer::AbilityDebug(ITerrorPlayer *pVictim, const char *msg, ...)

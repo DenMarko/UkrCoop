@@ -552,3 +552,64 @@ void CPASAttenuationFilter::Filter( const Vector& origin, float attenuation /*= 
 		RemoveRecipient( player );
 	}
 }
+
+static unsigned short FixedUnsigned16( float value, float scale )
+{
+	int output;
+
+	output = value * scale;
+	if ( output < 0 )
+		output = 0;
+	if ( output > 0xFFFF )
+		output = 0xFFFF;
+
+	return (unsigned short)output;
+}
+
+struct ScreenFade_t
+{
+	unsigned short 	duration;		// FIXED 16 bit, with SCREENFADE_FRACBITS fractional, seconds duration
+	unsigned short 	holdTime;		// FIXED 16 bit, with SCREENFADE_FRACBITS fractional, seconds duration until reset (fade & hold)
+	short			fadeFlags;		// flags
+	byte			r, g, b, a;		// fade to color ( max alpha )
+};
+
+#define SCREENFADE_FRACBITS		9		// which leaves 16-this for the integer part
+
+void UTIL_ScreenFadeBuild( ScreenFade_t &fade, const color32 &color, float fadeTime, float fadeHold, int flags )
+{
+	fade.duration = FixedUnsigned16( fadeTime, 1<<SCREENFADE_FRACBITS );		// 7.9 fixed
+	fade.holdTime = FixedUnsigned16( fadeHold, 1<<SCREENFADE_FRACBITS );		// 7.9 fixed
+	fade.r = color.r;
+	fade.g = color.g;
+	fade.b = color.b;
+	fade.a = color.a;
+	fade.fadeFlags = flags;
+}
+
+void UTIL_ScreenFadeWrite( const ScreenFade_t &fade, IBaseEntity *pEntity )
+{
+	if ( !pEntity || !pEntity->IsNetClient() )
+		return;
+
+	CSingleUserRecipientFilter user( (IBasePlayer *)pEntity );
+	user.MakeReliable();
+
+	CUserMessage *pUMsg = new CUserMessage(user, "Fade");
+	pUMsg->MsgWriteShort( fade.duration );		// fade lasts this long
+	pUMsg->MsgWriteShort( fade.holdTime );		// fade lasts this long
+	pUMsg->MsgWriteShort( fade.fadeFlags );		// fade type (in / out)
+	pUMsg->MsgWriteByte( fade.r );				// fade red
+	pUMsg->MsgWriteByte( fade.g );				// fade green
+	pUMsg->MsgWriteByte( fade.b );				// fade blue
+	pUMsg->MsgWriteByte( fade.a );				// fade blue
+	delete pUMsg;
+}
+
+void UTIL_ScreenFade(IBaseEntity *pEntity, const color32 &color, float fadeTime, float fadeHold, int flags)
+{
+	ScreenFade_t	fade;
+
+	UTIL_ScreenFadeBuild( fade, color, fadeTime, fadeHold, flags );
+	UTIL_ScreenFadeWrite( fade, pEntity );
+}

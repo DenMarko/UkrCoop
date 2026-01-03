@@ -411,8 +411,12 @@ public:
 	void 					SetDucked(bool bDucked) { m_Local.m_bDucked = bDucked; }
 	void					SetDucking(bool bDucking) { m_Local.m_bDucking = bDucking; }
 	void					SetDucktime(float flTime) { m_Local.m_flDucktime = flTime; }
+	float					GetFallVelocity() { return m_Local.m_flFallVelocity; }
+	void					SetFallVelocity( float velocity ) { m_Local.m_flFallVelocity = velocity; }
 	const IBaseEntity*		GetUseEntity() const { return m_hUseEntity; }
 	bool					ClearUseEntity( void );
+	void					SnapEyeAngles( const QAngle &viewAngles );
+
 
 	IPlayerInfo *GetPlayerInfo() { return &m_PlayerInfo; }
 	IBotController *GetBotController() { return &m_PlayerInfo; }

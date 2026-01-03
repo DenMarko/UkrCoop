@@ -416,6 +416,12 @@ bool IBasePlayer::ClearUseEntity(void)
     return false;
 }
 
+void IBasePlayer::SnapEyeAngles(const QAngle &viewAngles)
+{
+	pl.v_angle = viewAngles;
+	pl.fixangle = FIXANGLE_ABSOLUTE;
+}
+
 void IBasePlayer::Weapon_DropSlot(int weaponSlot)
 {
 	IBaseCombatWeapon *pWeapon;

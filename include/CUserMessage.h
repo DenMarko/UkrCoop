@@ -81,6 +81,14 @@ public:
 	}
 };
 
+class CSingleUserRecipientFilter : public MyRecipientFilter
+{
+public:
+	CSingleUserRecipientFilter( IBasePlayer *player )
+	{
+		AddRecipient( player );
+	}
+};
 
 class CPASAttenuationFilter : public IPASFilter
 {
@@ -140,6 +148,7 @@ public:
 public:
 	void Filter( const Vector& origin, float attenuation = ATTN_NORM );
 };
+
 
 
 class CUserRecipientFilter : public IRecipientFilter
@@ -214,5 +223,5 @@ public:
     void MsgWriteBits( const void *pIn, int nBits );
 };
 
-
+void UTIL_ScreenFade(IBaseEntity *pEntity, const color32 &color, float fadeTime, float fadeHold, int flags);
 #endif

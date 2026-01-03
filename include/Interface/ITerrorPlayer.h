@@ -25,19 +25,26 @@ public:
 	void SetPushEntity(IBaseEntity* pEntity);
 	void StopRevivingSomeone(bool palySound);
 	void StopHealingSomeone( void );
-	void ReleaseTongueVictim( void );
+	void ReleaseTongueVictim( bool force );
 	void SetMainActivity(Activity activity, bool bVal = false);
 	void CancelStagger( void );
 	void CancelTug( void );
 
 	void OnStaggered(IBaseEntity* pAttacker, const Vector *dist = nullptr);
+	void OnShovedBySurvivor(ITerrorPlayer* pPusher, const Vector &force);
+
 	void OnPounceEnded( void );
 	void OnReleasedByTongue( void );
 	void OnReleasingWithTongue( void );
 	void OnStopHangingFromTongue(int);
+	void OnStunned( float duration );
+
+	void EmitInfectedPainSound(const CTakeDamageInfo &info);
+	void Vocalize(const char* szName, float val, float val2);
 
 	bool IsMotionControlledXY(Activity activity);
 	bool IsMotionControlledZ(Activity activity);
+	bool IsRenderYawOverridden();
 
 	void AbilityDebug(ITerrorPlayer *pVictim, const char* msg, ...);
 

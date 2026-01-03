@@ -64,7 +64,7 @@ public:
     virtual bool                    CanFidget(void) = 0;
     virtual bool                    IsDroppedWhenHolstered(void)const = 0;
     virtual bool                    WantsCSItemPostFrame(void)const = 0;
-    virtual void                    OnStunned(float) = 0;
+    virtual void                    OnStunned(float duration) = 0;
     virtual void                    OnPouncedUpon(void) = 0;
     virtual void                    OnOwnerTakeDamage(const CTakeDamageInfo &info) = 0;
     virtual Activity                TranslateViewmodelActivity(Activity)const = 0;

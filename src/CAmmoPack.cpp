@@ -2,6 +2,7 @@
 #include "CAmmoDef.h"
 #include "Interface/IProps.h"
 #include "Interface/ITerrorPlayer.h"
+#include "Interface/IInfected.h"
 #include "detours.h"
 
 extern int PrecacheModels(const char *szName, bool isPreload = true);
@@ -128,6 +129,34 @@ public:
             }
 
 			return Pl_Handled;
+        }
+        else if(g_Sample.my_bStrcmp(args[0], "ukr_stagger"))
+        {
+            CBaseEntity *pEntity = nullptr;
+            ITerrorPlayer *pAttacer = GetVirtualClass<ITerrorPlayer>(client);
+            Vector vecPos = pAttacer->GetAbsOrigin();
+            float flRadius = 10000.f;
+
+            for(CEntitySphereQuery_ sphere(vecPos, flRadius); (pEntity = sphere.GetCurrentEntity()) != nullptr; sphere.NextEntity())
+            {
+                ITerrorPlayer *pPlayer = access_dynamic_cast<ITerrorPlayer>((IBaseEntity*)pEntity, "CTerrorPlayer");
+                if(pPlayer && pPlayer != pAttacer)
+                {
+                    if(pPlayer->GetTeamNumber() == 2)
+                    {
+                        if(!pPlayer->IsStaggering())
+                            pPlayer->OnStaggered(pAttacer);
+                    }
+                    else if(pPlayer->GetTeamNumber() == 3)
+                    {
+                        if(pPlayer->GetClass() == ZombieClassTank)
+                            pPlayer->OnStaggered(pAttacer);
+                        else
+                            pPlayer->OnShovedBySurvivor(pAttacer, vecPos);
+                    }
+                }
+            }
+            return Pl_Handled;
         }
         return Pl_Continue;
     }
