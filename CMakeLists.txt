@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.28)
 project(UkrCoop)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_BUILD_TYPE Release)
@@ -24,7 +24,6 @@ include_directories(
     ..
     include
     include/sdk
-    include/GeoIP_SDK
     include/includ_lua
     include/Interface
     include/LuaBridge
@@ -67,9 +66,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-class-memaccess -Wno-overload
 set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -Wall -Werror -Wno-switch -Wno-unused -msse -O3 -funroll-loops -pipe -fno-strict-aliasing -fno-inline-functions -mfpmath=sse -fvisibility=hidden -fno-exceptions -Wno-unused-result")
 # Static libraries
 set(STATIC_LIBS
-    /home/denmarko/projects/hl2sdk-l4d/lib/linux/tier1_i486.a
-    /home/denmarko/projects/hl2sdk-l4d/lib/linux/mathlib_i486.a
-    /home/denmarko/projects/lua54/lib32/liblua.a
+    /home/den/projects/hl2sdk-l4d/lib/linux/tier1_i486.a
+    /home/den/projects/hl2sdk-l4d/lib/linux/mathlib_i486.a
+    /home/den/projects/lua54/lib32/liblua.a
 )
 
 # Shared libraries

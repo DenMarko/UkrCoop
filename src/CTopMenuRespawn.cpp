@@ -40,9 +40,12 @@ bool ClientRespawn(int client, int target)
             }
 
             auto pTarget = GetVirtualClass<ITerrorPlayer>(target);
-            pTarget->RoundRespawn();
-            pTarget->Teleport(&vecSpot1, &angRand, nullptr);
-            return true;
+            if(pTarget)
+            {
+                pTarget->RoundRespawn();
+                pTarget->Teleport(&vecSpot1, &angRand, nullptr);
+                return true;
+            }
         }
     }
     return false;

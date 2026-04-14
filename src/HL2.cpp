@@ -960,6 +960,7 @@ void HL2::RadiusDamage(const CTakeDamageInfo &info, const Vector &vecSrcIn, floa
     }
 }
 
+/// This function calculates the percentage of an entity that is visible from a given source point.
 float HL2::GetAmountOfEntityVisible(Vector &vecSrc, IBaseEntity *pEntity)
 {
     float retval = 0.0;
@@ -1023,6 +1024,7 @@ float HL2::GetAmountOfEntityVisible(Vector &vecSrc, IBaseEntity *pEntity)
     return retval;
 }
 
+// This function calculates the damage adjustment based on the visibility of an entity from a given source point.
 float HL2::GetExplosionDamageAdjustment(Vector &vecSrc, Vector &vecEnd, IBaseEntity *pEntToIgnore)
 {
     float retval = 0.0;
@@ -1077,6 +1079,7 @@ float HL2::GetExplosionDamageAdjustment(Vector &vecSrc, Vector &vecEnd, IBaseEnt
     return retval;
 }
 
+// This function calculates the force of an explosion on an entity based on the damage information and the direction of the explosion.
 void HL2::CalculateExplosiveDamageForce(CTakeDamageInfo *info, const Vector &vecDir, const Vector &vecForceOrigin, float flScale)
 {
     auto ImpScale = [](float flTargetMass, float flDesiredSpeed)
@@ -1101,6 +1104,7 @@ void HL2::CalculateExplosiveDamageForce(CTakeDamageInfo *info, const Vector &vec
 	info->SetDamageForce( vecForce );
 }
 
+// This function applies a vomiting effect to an entity, causing it to vomit upon another entity.
 void HL2::PlayerVomitUpon(CBaseEntity *pEntity, CBaseEntity *aEntity, cell_t params)
 {
 	if(SetupVomitUpon())
@@ -1110,6 +1114,7 @@ void HL2::PlayerVomitUpon(CBaseEntity *pEntity, CBaseEntity *aEntity, cell_t par
 	}
 }
 
+// This function reserves a lobby for the current game session and returns a cookie that can be used to identify the reservation.
 int64_t HL2::GetReserveLobby()
 {
     if(g_pServer == nullptr)
@@ -1128,6 +1133,7 @@ int64_t HL2::GetReserveLobby()
 }
 
 //CBaseServer::SetReservationCookie(uint64_t reservationCookie, const char* formatString, va_list ap)
+// This function unreserves a lobby that was previously reserved using the GetReserveLobby function.
 void HL2::UnReserveLobby()
 {
     if(g_pServer == nullptr)

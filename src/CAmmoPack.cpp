@@ -107,53 +107,72 @@ public:
 
 		if(g_Sample.my_bStrcmp(args[0], "ukr_test_box"))
 		{
-            IBasePlayer *me = (IBasePlayer*)gamehelpers->ReferenceToEntity(client);
-            if(me != nullptr)
+            if(IsAdminAccess(pPlayer->GetAdminId(), ADMFLAG_CHEATS))
             {
-                Vector forvard;
-                me->EyeVectors(&forvard);
-
-                trace_t res;
-                util_TraceLine(
-                    me->EyePosition(), 
-                    me->EyePosition() + 999999.9f * forvard, 
-                    (MASK_BLOCKLOS_AND_NPCS|CONTENTS_IGNORE_NODRAW_OPAQUE), 
-                    me->GetNetworkable()->GetEntityHandle(), 
-                    COLLISION_GROUP_NONE, 
-                    &res);
-            
-                if(res.DidHit())
+                IBasePlayer *me = (IBasePlayer*)gamehelpers->ReferenceToEntity(client);
+                if(me != nullptr)
                 {
-                    OnCreate(res.endpos + Vector(0.f, 0.f, 10.f), RandomInt(1, 2) == 1 ? true : false);
+                    Vector forvard;
+                    me->EyeVectors(&forvard);
+
+                    trace_t res;
+                    util_TraceLine(
+                        me->EyePosition(), 
+                        me->EyePosition() + 999999.9f * forvard, 
+                        (MASK_BLOCKLOS_AND_NPCS|CONTENTS_IGNORE_NODRAW_OPAQUE), 
+                        me->GetNetworkable()->GetEntityHandle(), 
+                        COLLISION_GROUP_NONE, 
+                        &res);
+                
+                    if(res.DidHit())
+                    {
+                        OnCreate(res.endpos + Vector(0.f, 0.f, 10.f), RandomInt(1, 2) == 1 ? true : false);
+                    }
                 }
             }
-
 			return Pl_Handled;
         }
         else if(g_Sample.my_bStrcmp(args[0], "ukr_stagger"))
-        {
-            CBaseEntity *pEntity = nullptr;
-            ITerrorPlayer *pAttacer = GetVirtualClass<ITerrorPlayer>(client);
-            Vector vecPos = pAttacer->GetAbsOrigin();
-            float flRadius = 10000.f;
-
-            for(CEntitySphereQuery_ sphere(vecPos, flRadius); (pEntity = sphere.GetCurrentEntity()) != nullptr; sphere.NextEntity())
+        {            
+            if(IsAdminAccess(pPlayer->GetAdminId(), ADMFLAG_CHEATS))
             {
-                ITerrorPlayer *pPlayer = access_dynamic_cast<ITerrorPlayer>((IBaseEntity*)pEntity, "CTerrorPlayer");
-                if(pPlayer && pPlayer != pAttacer)
+                CBaseEntity *pEntity = nullptr;
+                ITerrorPlayer *pAttacer = GetVirtualClass<ITerrorPlayer>(client);
+                Vector vecPos = pAttacer->GetAbsOrigin();
+                float flRadius = 10000.f;
+
+                CEntitySphereQuery_ sphere(vecPos, flRadius);
+
+                while ( (pEntity = sphere.GetCurrentEntity()) != nullptr)
                 {
-                    if(pPlayer->GetTeamNumber() == 2)
+                    ITerrorPlayer *pPlayer = access_dynamic_cast<ITerrorPlayer>((IBaseEntity*)pEntity, "CTerrorPlayer");
+                    if(pPlayer && pPlayer != pAttacer)
                     {
-                        if(!pPlayer->IsStaggering())
-                            pPlayer->OnStaggered(pAttacer);
+                        if(pPlayer->GetTeamNumber() == 2)
+                        {
+                            if(!pPlayer->IsStaggering())
+                                pPlayer->OnStaggered(pAttacer);
+                        }
+                        else if(pPlayer->GetTeamNumber() == 3)
+                        {
+                            if(pPlayer->GetClass() == ZombieClassTank)
+                                pPlayer->OnStaggered(pAttacer);
+                            else
+                                pPlayer->OnShovedBySurvivor(pAttacer, vecPos);
+                        }
+                        continue;
                     }
-                    else if(pPlayer->GetTeamNumber() == 3)
+
+                    auto pInfected = reinterpret_cast<IBaseEntity*>(pEntity)->MyInfectedPointer();
+                    if(pInfected)
                     {
-                        if(pPlayer->GetClass() == ZombieClassTank)
-                            pPlayer->OnStaggered(pAttacer);
-                        else
-                            pPlayer->OnShovedBySurvivor(pAttacer, vecPos);
+                        auto pNextBot = pInfected->MyNextBotPointer();
+                        if(pNextBot)
+                        {
+                            pNextBot->OnShoved((CBaseEntity*)pAttacer);
+                        }
                     }
+                    sphere.NextEntity();
                 }
             }
             return Pl_Handled;
@@ -226,6 +245,13 @@ bool CAmmoBox::Spawn(const Vector &vecOrigion, bool IsShotgun)
     }
 
     m_pEntity->DispatchUpdateTransmitState();
+
+    if(!m_pEntity->HasSpawnFlags(0x000004))
+        m_pEntity->AddSpawnFlags(0x000004);
+
+    if(!m_pEntity->HasSpawnFlags(0x001000))
+        m_pEntity->AddSpawnFlags(0x001000);
+
     servertools->DispatchSpawn(m_pEntity);
     m_pEntity->SetFadeDistance(-1, 0);
     m_pEntity->DisableAutoFade();

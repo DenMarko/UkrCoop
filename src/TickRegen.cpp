@@ -142,8 +142,8 @@ TickRegen::TickRegen(void) : CGameEventListeners(), m_infoClient(SourceHook::Lis
 	g_fExtraRegenThink	= 0.0f;
 	g_fLuaThink			= 0.0f;
 
-	m_bHasMapTickedYet = false;
-	roundStart = true;
+	m_bHasMapTickedYet 	= false;
+	roundStart 			= true;
 
 	luabridge::getGlobalNamespace(g_Sample.GetLuaState())
 		.beginClass<TickRegen>("Frame")

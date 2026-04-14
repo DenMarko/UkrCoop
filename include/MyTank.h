@@ -98,6 +98,7 @@ public:
     virtual float operator()(INavArea *area, INavArea *fromArea, const INavLadder *ladder, const CFuncElevator *elevator, float length) const;
 };
 
+// Поведінка руху до цілі з обробкою успіху та невдачі
 template < typename Actor, typename PathCost >
 class BehaviorMoveTo : public Action< Actor >
 {

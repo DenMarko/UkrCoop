@@ -40,8 +40,12 @@ bool ClientTeleport(int client, int target)
                 }
             }
 
-            GetVirtualClass<ITerrorPlayer>(target)->Teleport(&vecSpot1, &angRand, nullptr);
-            return true;
+            auto pTerrorPlayer = GetVirtualClass<ITerrorPlayer>(target);
+            if(pTerrorPlayer)
+            {
+                pTerrorPlayer->Teleport(&vecSpot1, &angRand, nullptr);
+                return true;
+            }
         }
     }
     return false;

@@ -201,11 +201,11 @@ const mstudioposeparamdesc_t &pPoseParameter(const CStudioHdr *pStudioHdrs, int 
 
 int GetNumSeq(const CStudioHdr* pStudio)
 {
-    int v1 = *((DWORD*)pStudio + 1);
-    if(v1)
-        return *(DWORD*)(v1 + 20);
-    else
-        return *(DWORD*)(*(DWORD*)pStudio + 188);
+	if(pStudio->GetVirtualModel())
+	{
+		return pStudio->GetVirtualModel()->m_seq.Count();
+	}
+	return pStudio->m_pStudioHdr->numlocalseq;
 }
 
 mstudioseqdesc_t &pSeqdesc(const CStudioHdr* pStudioHdr, int i)
@@ -215,33 +215,27 @@ mstudioseqdesc_t &pSeqdesc(const CStudioHdr* pStudioHdr, int i)
         i = 0;
     }
 
-    int v1 = *((DWORD *)pStudioHdr + 1);
-    if(v1)
+	virtualmodel_t *pVModel = pStudioHdr->GetVirtualModel(); 
+    if(pVModel == NULL)
     {
-        int v2 = 16 * i;
-        virtualsequence_t &m_seq = *(virtualsequence_t*)(v2 + *(DWORD*)(v1 + 8));
-
-        const studiohdr_t *pSudio = GroupStudioHdr(pStudioHdr, m_seq.group);
-        return *pSudio->pLocalSeqdesc(m_seq.index);
+		return *pStudioHdr->m_pStudioHdr->pLocalSeqdesc(i);
     }
 
-    return *pStudioHdr->m_pStudioHdr->pLocalSeqdesc(i);
+	const studiohdr_t *pSudio = GroupStudioHdr(pStudioHdr, pVModel->m_seq[i].group);
+	return *pSudio->pLocalSeqdesc(pVModel->m_seq[i].index);
 }
 
 mstudioanimdesc_t &pAnimdesc(CStudioHdr *pStudioHdr, int i )
 {
-    int v1 = *((DWORD *)pStudioHdr + 1);
-    if(v1)
+	virtualmodel_t *pVModel = pStudioHdr->GetVirtualModel(); 
+
+    if(pVModel == NULL)
     {
-        int v2 = 28 * i;
-        virtualsequence_t &m_seq = *(virtualsequence_t*)(v2 + *(DWORD*)(v1 + 8));
-
-        const studiohdr_t *pSudio = GroupStudioHdr(pStudioHdr, m_seq.group);
-
-        return *pSudio->pLocalAnimdesc(m_seq.index);
+    	return *pStudioHdr->m_pStudioHdr->pLocalAnimdesc(i);
     }
 
-    return *pStudioHdr->m_pStudioHdr->pLocalAnimdesc(i);
+	const studiohdr_t *pSudio = GroupStudioHdr(pStudioHdr, pVModel->m_anim[i].group);
+	return *pSudio->pLocalAnimdesc(pVModel->m_anim[i].index);
 }
 
 int GetSharedPoseParameter(CStudioHdr *pThis, int a2, int a3)

@@ -159,7 +159,12 @@ bool CDetour::CreateDetour()
 	}
 
 	detour_restore.bytes = copy_bytes((unsigned char *)detour_address, NULL, OP_JMP_SIZE);
-
+	if (detour_restore.bytes > sizeof(detour_restore.patch))
+	{
+		g_pSM->LogError(myself, "copy_bytes повернула %zu байтів — перевищує буфер", detour_restore.bytes);
+		return false;
+	}
+	
 	/* First, save restore bits */
 	for (size_t i=0; i<detour_restore.bytes; i++)
 	{

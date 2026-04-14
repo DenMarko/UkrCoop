@@ -11,9 +11,9 @@ void IInfected::Vocalize(const char *szVocalise, bool bValue)
     if(!m_vocaliseTimer.IsElapsed())
         return;
     
-    ConVarRef zombieMobMax("z_mob_spawn_max_size");
-    ConVarRef mixDynamicMaxCIEmitter("mix_dynamic_max_CI_emitters");
-    ConVarRef mixDynamicCullMaxCIEmitter("mix_dynamic_cull_max_CI_emitters");
+    static ConVarRef zombieMobMax("z_mob_spawn_max_size");
+    static ConVarRef mixDynamicMaxCIEmitter("mix_dynamic_max_CI_emitters");
+    static ConVarRef mixDynamicCullMaxCIEmitter("mix_dynamic_cull_max_CI_emitters");
 
     if(mixDynamicMaxCIEmitter.GetInt() >= zombieMobMax.GetInt() || mixDynamicCullMaxCIEmitter.GetInt() == 0)
     {

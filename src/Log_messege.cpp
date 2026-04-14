@@ -10,7 +10,7 @@ LM::LM()
 	luabridge::setGlobal(g_Sample.GetLuaState(), this, "Log");
 }
 
-void LM::InitLogMesseg(void){
+void LM::InitLogMesseg(void) {
 	time_t t = time(NULL);
 	tm *curtime = localtime(&t);
 

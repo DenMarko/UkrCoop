@@ -64,6 +64,6 @@ bool chat_log::ChatLogMsg(const char *msg, ...)
 		fclose(fp);
 		return true;
 	}
-	fclose(fp);
+	if(fp) fclose(fp);
 	return false;
 }
