@@ -4,7 +4,7 @@
     "cmake.buildDirectory": "${workspaceFolder}/build",
     "cmake.configureArgs": [
         "-DCMAKE_BUILD_TYPE=Release",
-        "-DCMAKE_CXX_COMPILER=/usr/bin/gcc",
+        "-DCMAKE_CXX_COMPILER=/usr/bin/g++",
         "-DCMAKE_C_COMPILER=/usr/bin/gcc"
     ],
     "cmake.configureOnOpen": true,

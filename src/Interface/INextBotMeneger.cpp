@@ -33,9 +33,8 @@ bool INextBotMeneger::IsDebugFilterMatch(const INextBot *bot) const
 			IBasePlayer *watcher = UTIL_GetListenerServerHost();
 			if ( watcher )
 			{
-				CBaseEntity *subject = watcher->GetObserverTarget();
-
-				if ( subject && bot->IsSelf( (CBaseCombatCharacter *)subject ) )
+				auto subject = (CBaseCombatCharacter *)watcher->GetObserverTarget();
+				if ( subject && bot->IsSelf( subject ) )
 				{
 					return true;
 				}

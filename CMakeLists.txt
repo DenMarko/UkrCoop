@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 3.28)
+cmake_minimum_required(VERSION 3.28.3)
 project(UkrCoop)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_BUILD_TYPE Release)
@@ -62,7 +62,7 @@ add_definitions(
 )
 
 # Compiler flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-class-memaccess -Wno-overloaded-virtual -Wno-switch -Wno-unused -Wno-non-virtual-dtor -Wno-delete-non-virtual-dtor -msse -O3 -funroll-loops -pipe -fno-strict-aliasing -fno-inline-functions -mfpmath=sse -fvisibility=hidden -fno-exceptions -fvisibility-inlines-hidden -fno-devirtualize")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall  -Wno-register -Wno-class-memaccess -Wno-overloaded-virtual -Wno-switch -Wno-unused -Wno-non-virtual-dtor -Wno-delete-non-virtual-dtor -msse -O3 -funroll-loops -pipe -fno-strict-aliasing -fno-inline-functions -mfpmath=sse -fvisibility=hidden -fno-exceptions -fvisibility-inlines-hidden -fno-devirtualize")
 set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -Wall -Werror -Wno-switch -Wno-unused -msse -O3 -funroll-loops -pipe -fno-strict-aliasing -fno-inline-functions -mfpmath=sse -fvisibility=hidden -fno-exceptions -Wno-unused-result")
 # Static libraries
 set(STATIC_LIBS

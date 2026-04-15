@@ -32,7 +32,7 @@ private:
 		if ( threadId != m_ownerID && !ThreadInterlockedAssignIf( (volatile long *)&m_ownerID, (long)threadId, 0 ) )
 			return false;
 
-		++m_depth;
+		m_depth = m_depth + 1;
 		return true;
 	}
 
@@ -93,7 +93,7 @@ public:
 			DebuggerBreak();
 #endif
 
-		--m_depth;
+		m_depth = m_depth - 1;
 		if ( !m_depth )
 			ThreadInterlockedExchange( &m_ownerID, 0 );
 	}

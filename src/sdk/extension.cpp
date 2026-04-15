@@ -28,6 +28,8 @@
 Sample				g_Sample;
 SMEXT_LINK(&g_Sample);
 
+thread_pool g_ThreadPool;
+
 ConVar				ukr_cvar_debug(		"ukr_coop_debug", 		"0", 		FCVAR_NONE, 	"Enable debug log", 				true, 0.f, 		true, 1.0f);
 ConVar				ukr_next_bot_debug(	"ukr_next_bot_debug",	"1",		FCVAR_NONE,		"Enable debug logging the nextbot",	true, 0.f,		true, 1.f);
 ConVar				ukr_my_witch_action("ukr_my_witch_action",	"1",		FCVAR_NONE,		"Enable to MyWitchAction",			true, 0.f,		true, 1.f);
@@ -946,7 +948,11 @@ bool Sample::SDK_OnLoad(char *error, size_t maxlength, bool late)
 	g_pOnRegisterVote = forwards->CreateForward("OnRegisterVote", ET_Ignore, 0, NULL);
 #endif
 	m_sLog->InitLogMesseg();
-	m_sChatLog->InitChatLog();
+
+	[=]() -> fire_and_forget {
+		co_await m_sChatLog->InitChatLog();
+		co_return;
+	}();
 
 	luabridge::setGlobal(L_sctipt, gamehelpers, "GameHelpers");
 
@@ -1599,8 +1605,7 @@ Results Sample::ClientOnSayChat(const char* msg, const int client, bool team)
 	if(!szTeamName)
 		szTeamName = GetTeamName(client);
 
-	if(team)
-	{
+	if(team) {
 		m_sChatLog->ChatLogMsg("[%-10s] %-35s:(TEAM) %s", szTeamName, formatName, msg);
 	} else {
 		m_sChatLog->ChatLogMsg("[%-10s] %-35s: %s", szTeamName, formatName, msg);

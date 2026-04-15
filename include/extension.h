@@ -27,6 +27,10 @@
 #include "CCreatePlayerBot.h"
 #include "configs.h"
 
+#include "async/thread_pool.h"
+#include "async/fire_and_forget.h"
+#include "async/task.h"
+
 template<size_t maxLenInChars> void _strcpy_safe( char (&pDest)[maxLenInChars], const char *pSrc)
 {
     V_strncpy(pDest, pSrc, maxLenInChars);
@@ -2208,7 +2212,6 @@ class Sample : public SDKExtension, public IConCommandBaseAccessor, public ISMEn
 public:
 	Sample():	m_pSayCmd(nullptr), m_pSayTeamCmd(nullptr), m_pExecPtr(nullptr), L_sctipt(luaL_newstate())
 	{
-		
 		luaL_openlibs(L_sctipt);
 	}
 	
@@ -2408,6 +2411,7 @@ extern IVModelInfo*						g_pModelInfo;
 extern IGameEventManager2*				gameevents;
 extern ISoundEmitterSystemBase*			soundemitterbase;
 extern Sample							g_Sample;
+extern thread_pool 						g_ThreadPool;
 extern ConVar							ukr_cvar_debug;
 extern ConVar							ukr_issue_vote_menu;
 extern ConVar							ukr_next_bot_debug;

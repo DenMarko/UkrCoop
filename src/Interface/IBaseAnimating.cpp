@@ -549,11 +549,11 @@ float IBaseAnimating::GetAnimTimeInterval(void) const
 	float flInterval;
 	if(m_flAnimTime < g_pGlobals->curtime)
 	{
-		flInterval = clamp(g_pGlobals->curtime - m_flAnimTime, 0, 0.2f);
+		flInterval = clamp(g_pGlobals->curtime - m_flAnimTime, .0f, .2f);
 	}
 	else
 	{
-		flInterval = clamp(m_flAnimTime - m_flPrevAnimTime, 0, 0.2f);
+		flInterval = clamp(m_flAnimTime - m_flPrevAnimTime, .0f, .2f);
 	}
 
     return flInterval;

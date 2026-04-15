@@ -244,8 +244,8 @@ MyResponceRules::CRR_Concept::CRR_Concept(const char *fromString)
 bool MyResponceRules::CRR_Concept::operator==(const char *pszConcept)
 {
     CUtlSymbolTable **g_pRRConceptTable = (CUtlSymbolTable**)g_HL2->GetAIConceptTable();
-	int otherConcept = (*g_pRRConceptTable)->Find(pszConcept);
-	return ( otherConcept != UTL_INVAL_SYMBOL && otherConcept == m_iConcept );
+	auto otherConcept = (*g_pRRConceptTable)->Find(pszConcept);
+	return ( otherConcept.IsValid() && otherConcept == m_iConcept );
 }
 
 MyResponceRules::CRR_Concept &MyResponceRules::CRR_Concept::operator=(const char *fromString)

@@ -83,7 +83,7 @@ ConVar_l4d::ConVar_l4d()
                     auto iter = pCvar->changeListersLua.begin();
                     while(iter != pCvar->changeListersLua.end())
                     {
-                        if(iter->pRef == sCallBack)
+                        if(iter->pRef.rawequal(sCallBack))
                         {
                             pCvar->changeListersLua.erase(iter);
                             return;

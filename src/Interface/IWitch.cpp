@@ -312,12 +312,12 @@ private:
 
     void SendBloodSplatterMessage()
     {
-        Vector vec_worldSpace = m_witch->WorldSpaceCenter();
+        Vector vecSpace = m_witch->WorldSpaceCenter();
 
-        IPVSFilter filter(vec_worldSpace);
+        IPVSFilter filter(vecSpace);
         filter.MakeReliable();
         CUserMessage msg(filter, "WitchBloodSplatter");
-        msg.MsgWriteVec3Coord(vec_worldSpace);
+        msg.MsgWriteVec3Coord(vecSpace);
     }
 
     NOINLINE ITerrorPlayer *GetPlayerFromHandle(const CBaseHandle &pHandleEntity)

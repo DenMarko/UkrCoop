@@ -79,7 +79,7 @@ public:
 
 	bool IsMarkSet()
 	{
-		return ( m_flMarkTolerance != NO_MARK );
+		return ( m_flMarkTolerance != static_cast<float>(NO_MARK) );
 	}
 
 	bool TargetMoved( IBaseEntity *pEntity )
