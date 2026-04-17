@@ -54,7 +54,7 @@ public:
 
             void await_resume() noexcept {}
         };
-        return awaitable{*this};
+        return awaitable{ *this };
     }
 
 private:
@@ -89,4 +89,5 @@ private:
         }
     }
 };
+
 #endif // _THREAD_POOL_H_

@@ -8,14 +8,26 @@
 class chat_log
 {
 public:
-    task<void> InitChatLog();
+    chat_log() = default;
 
-    void ChatLogMsg(const char* format, ...);
+    fire_and_forget InitChatLog();
+
+    template<typename... Args>
+    fire_and_forget ChatLogMsg(const char* format, Args&&... args)
+    {
+        char buffer[4096];
+        std::snprintf(buffer, sizeof(buffer), format, std::forward<Args>(args)...);
+
+        SourceHook::String message(buffer);
+
+        co_await WriteToLog(std::move(message));
+        co_return;
+    }
 
     task<bool> ChatLogMsgAsync(SourceHook::String message);
 
 private:
-    task<bool> WriteToLog(SourceHook::String message); // const char* — не сирий вказівник
+    task<bool> WriteToLog(SourceHook::String message);
 
     void UpdateFileInfoIfNeeded(const tm* current_time);
 

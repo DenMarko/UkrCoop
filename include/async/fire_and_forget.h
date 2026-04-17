@@ -6,18 +6,14 @@
 
 struct fire_and_forget {
     struct promise_type {
-        fire_and_forget get_return_object() noexcept { return {}; }
+        fire_and_forget get_return_object()  noexcept { return {};          }
 
-        std::suspend_never initial_suspend() noexcept { return {}; }
-        std::suspend_never final_suspend()   noexcept { return {}; }
+        std::suspend_never initial_suspend() noexcept { return {};          }
+        std::suspend_never final_suspend()   noexcept { return {};          }
 
-        void return_void() noexcept {}
+        void return_void() noexcept                   {                     }
 
-        // виняток = terminate, як в WinRT
-        // в debug можна замінити на assert з повідомленням
-        void unhandled_exception() noexcept {
-            std::terminate();
-        }
+        void unhandled_exception()           noexcept { std::terminate();   }
     };
 };
 

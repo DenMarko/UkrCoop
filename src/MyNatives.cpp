@@ -40,7 +40,9 @@ FUNC_NATIVE(LogMessegToFile)
 		return 0;
 	}
 	IPlugin *pPlugins = plsys->FindPluginByContext(pContext->GetContext());
-	return m_sLog->LogToFileEx(false, "[%s] %s", pPlugins->GetFilename(), meseg);
+	m_sLog->LogToFileEx(false, "[%s] %s", pPlugins->GetFilename(), meseg);
+	
+	return 1;
 }
 
 FUNC_NATIVE(BotCreater)

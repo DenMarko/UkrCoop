@@ -948,11 +948,7 @@ bool Sample::SDK_OnLoad(char *error, size_t maxlength, bool late)
 	g_pOnRegisterVote = forwards->CreateForward("OnRegisterVote", ET_Ignore, 0, NULL);
 #endif
 	m_sLog->InitLogMesseg();
-
-	[=]() -> fire_and_forget {
-		co_await m_sChatLog->InitChatLog();
-		co_return;
-	}();
+	m_sChatLog->InitChatLog();
 
 	luabridge::setGlobal(L_sctipt, gamehelpers, "GameHelpers");
 

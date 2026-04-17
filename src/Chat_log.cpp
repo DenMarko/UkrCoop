@@ -4,27 +4,27 @@
 #include <cstdarg>
 #include <string>
 
+template<typename T> using result = expected<T, error_code>;
+
 // Портативний thread-safe localtime
 static tm safe_localtime(const time_t* t)
 {
     tm result{};
-#if defined(_WIN32)
-    localtime_s(&result, t);
-#else
     localtime_r(t, &result);
-#endif
     return result;
 }
 
-// ------------------------------------------------------------------
-task<void> chat_log::InitChatLog()
+// chat_log::InitChatLog() — це асинхронна coroutine fire_and_forget, 
+// яка переходить на g_ThreadPool, визначає поточну дату, 
+// під захистом м’ютексу встановлює ім’я файлу та стан логування, 
+// а потім записує заголовок сесії в файл чату й повідомляє про помилку, якщо запис не вдався.
+fire_and_forget chat_log::InitChatLog()
 {
     co_await g_ThreadPool.schedule();
 
     time_t t = time(nullptr);
     tm curtime = safe_localtime(&t); // копія, не вказівник
 
-    std::string filename;
     {
         std::lock_guard<std::mutex> lock(m_mutex);
         info.m_NrmCurDay = curtime.tm_mday;
@@ -36,12 +36,11 @@ task<void> chat_log::InitChatLog()
 
         info.m_NrmFileName.assign(path);
         info.m_DailPrinted = true;
-        filename = path;
     }
 
     char header[512];
     snprintf(header, sizeof(header),
-        "ChatLog log file session started (file \"/logs/CHAT_LOG_%04d%02d%02d.log\") (Version \"%s\")\n",
+        "ChatLog log file session started (file \"/logs/CHAT_LOG_%04d%02d%02d.log\") (Version \"%s\")",
         curtime.tm_year + 1900, curtime.tm_mon + 1, curtime.tm_mday, SMEXT_CONF_VERSION);
 
     {
@@ -49,36 +48,26 @@ task<void> chat_log::InitChatLog()
         info.m_DailPrinted = false;
     }
 
-    co_await WriteToLog(header);
+    auto res = co_await WriteToLog(header);
+    if(!res)
+        Msg("Failed to initialize ChatLog: ERROR: %d\n", to_string(res.error()));
 
     co_return;
 }
 
-// ------------------------------------------------------------------
-void chat_log::ChatLogMsg(const char* format, ...)
-{
-    char buffer[3072];
-    va_list args;
-    va_start(args, format);
-    vsnprintf(buffer, sizeof(buffer), format, args);
-    va_end(args);
-
-    SourceHook::String message(buffer);
-
-    [this, msg = std::move(message)]() mutable -> fire_and_forget {
-        co_await WriteToLog(msg);
-		co_return;
-    }();
-}
-
-// ------------------------------------------------------------------
+// Асинхронна функція-член chat_log::ChatLogMsgAsync приймає SourceHook::String message, 
+// спочатку чекає планування в g_ThreadPool, 
+// а потім записує повідомлення в лог, повертаючи task<bool, error_code>.
 task<bool> chat_log::ChatLogMsgAsync(SourceHook::String message)
 {
     co_await g_ThreadPool.schedule();
     co_return co_await WriteToLog(message);
 }
 
-// ------------------------------------------------------------------
+// Метод chat_log::UpdateFileInfoIfNeeded перевіряє, 
+// чи відрізняється день у переданому current_time від збереженого, 
+// і якщо так, генерує нове ім’я щоденного лог-файлу, 
+// оновлює ім’я файлу, поточний день та встановлює прапорець m_DailPrinted.
 void chat_log::UpdateFileInfoIfNeeded(const tm* current_time)
 {
     if (info.m_NrmCurDay != current_time->tm_mday)
@@ -96,7 +85,11 @@ void chat_log::UpdateFileInfoIfNeeded(const tm* current_time)
     }
 }
 
-// ------------------------------------------------------------------
+// chat_log::WriteToLog асинхронно зберігає рядок у файл логів чату, 
+// підхоплюючи поточний час, 
+// оновлюючи інформацію про файл під захистом м’ютекса та за потреби додаючи заголовок сесії. 
+// Функція повертає task<bool, error_code>, де успіх позначається true, 
+// а помилка відкриття файлу повертає відповідний error_code.
 task<bool> chat_log::WriteToLog(SourceHook::String message)
 {
     time_t t = time(nullptr);
@@ -115,21 +108,20 @@ task<bool> chat_log::WriteToLog(SourceHook::String message)
 
     FILE* fp = fopen(filename.c_str(), "a+");
     if (!fp)
-        co_return false;
+        co_return result<bool>::err(error_code::file_open_failed);
+
+    char date[64];
+    strftime(date, sizeof(date), "%d.%m.%Y %H:%M:%S", &curtime);
 
     if (need_header)
     {
-        char date[64];
-        strftime(date, sizeof(date), "%d.%m.%Y %H:%M:%S", &curtime);
         fprintf(fp,
             "L [%s] ChatLog log file session started (file \"/logs/CHAT_LOG_%04d%02d%02d.log\") (Version \"%s\")\n",
             date, curtime.tm_year + 1900, curtime.tm_mon + 1, curtime.tm_mday, SMEXT_CONF_VERSION);
     }
 
-    char date[64];
-    strftime(date, sizeof(date), "%d.%m.%Y %H:%M:%S", &curtime);
     fprintf(fp, "L [%s] %s\n", date, message.c_str());
-
     fclose(fp);
-    co_return true;
+
+    co_return result<bool>::ok(true);
 }
