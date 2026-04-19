@@ -7,8 +7,8 @@
 #include "error.h"
 
 // expected<T, E=error_code>
-// - без throw, без exception_ptr
-// - помилку можна мовчки проігнорувати (деструктор нічого не робить)
+// Проброс помилки відбувається через await_transform в task::promise_type
+// (див. task.hpp → TryAwaiter). operator co_await тут не потрібен.
 
 template<typename T, typename E = error_code>
 struct expected {
@@ -27,16 +27,17 @@ struct expected {
     bool has_value() const noexcept { return storage_.index() == 1; }
     explicit operator bool() const noexcept { return has_value(); }
 
+    // value() — три перевантаження для &, const&, &&
     T& value()& {
-        assert(has_value());
+        assert(has_value() && "expected: value on error");
         return std::get<1>(storage_);
     }
     const T& value() const& {
-        assert(has_value());
+        assert(has_value() && "expected: value on error");
         return std::get<1>(storage_);
     }
     T&& value()&& {
-        assert(has_value());
+        assert(has_value() && "expected: value on error");
         return std::move(std::get<1>(storage_));
     }
 
@@ -76,31 +77,19 @@ private:
 // --------------------------------------------------------
 template<typename E>
 struct expected<void, E> {
-    static expected ok() {
-        expected r;
-        r.ok_ = true;
-        return r;
-    }
-
-    static expected err(E e = E{}) {
-        expected r;
-        r.ok_ = false;
-        r.error_ = e;
-        return r;
-    }
+    static expected ok() { expected r; r.ok_ = true;  return r; }
+    static expected err(E e = E{}) { expected r; r.ok_ = false; r.e_ = e; return r; }
 
     bool has_value() const noexcept { return ok_; }
     explicit operator bool() const noexcept { return ok_; }
-
-    E error() const noexcept { return error_; }
+    E error() const noexcept { return e_; }
 
 private:
     expected() {}
     bool ok_ = false;
-    E    error_ = E{};
+    E    e_ = E{};
 };
 
-#define CO_OK  co_return expected<void>::ok()
-#define CO_ERR(msg) co_return expected<void>::err(msg)
+using result_void = expected<void, error_code>;
 
 #endif // _ASYNC_EXPECTED_H_

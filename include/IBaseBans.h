@@ -41,14 +41,14 @@ class IBaseBans
 public:
 	virtual ~IBaseBans() {}
 
-	virtual bool AddBan(int clientID, int adminID, int time, const char *reason) = 0;
-	virtual bool AddBan(const char *authId, int adminID, int time, const char *reason) = 0;
-	virtual bool UnBan(const char* authId, int adminId, const char* reason) = 0;
+	virtual fire_and_forget AddBan(int clientID, int adminID, int time, const char *reason) = 0;
+	virtual fire_and_forget AddBan(const char *authId, int adminID, int time, const char *reason) = 0;
+	virtual fire_and_forget UnBan(const char* authId, int adminId, const char* reason) = 0;
 
-    virtual bool GetClientBanData(const char *authID, SBanInfo *info) = 0;
+    virtual task<bool> GetClientBanData(const char *authID, SBanInfo *info) = 0;
     virtual IQuery* GetActiveBans( void ) = 0;
     virtual IResultSet* GetResultSet(IQuery* pQuery) = 0;
-    virtual bool GetBanInfo(IResultSet* query, SBanInfo* info) = 0;
+    virtual task<bool> GetBanInfo(IResultSet* query, SBanInfo* info) = 0;
 };
 
 class IBaseBansDB
@@ -61,7 +61,7 @@ public:
 	virtual void Release( void ) = 0;
 };
 
-extern IBaseBansDB* g_pBanDB;
-extern IBaseBans *g_pBaseBans;
+extern std::shared_ptr<IBaseBansDB> g_pBanDB;
+extern std::shared_ptr<IBaseBans> g_pBaseBans;
 
 #endif // _HEADER_IBASEBANS_INCLUDE_

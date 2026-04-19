@@ -179,7 +179,7 @@ void CMenuTimeBans::OnMenuSelect2(IBaseMenu *menu, int client, unsigned int item
             return;
         }
 
-        auto AddFlags = [&pMenu](unsigned int flags)
+        auto AddFlags = [=](unsigned int flags)
         {
             unsigned int old_flags = pMenu->GetMenuOptionFlags();
             old_flags |= flags;
@@ -237,10 +237,8 @@ void CMenuReasonBans::OnMenuSelect2(IBaseMenu *menu, int client, unsigned int it
 
     if(g_pBaseBans)
     {
-        if(g_pBaseBans->AddBan(m_target, client, m_time, szReason))
-        {
-            g_HL2->TextMsg(client, DEST::CHAT, "Client is banned");
-        }
+        g_pBaseBans->AddBan(m_target, client, m_time, szReason);
+        g_HL2->TextMsg(client, CHAT, "Player is banned!");
     }
 
     auto pPlayer = playerhelpers->GetGamePlayer(client);
@@ -253,7 +251,7 @@ void CMenuReasonBans::OnMenuSelect2(IBaseMenu *menu, int client, unsigned int it
 }
 
 template<typename Func>
-void ForEachActiveBans(Func &func)
+task<void> ForEachActiveBans(Func &func)
 {
     IQuery* pQuery = nullptr;
     if((pQuery = g_pBaseBans->GetActiveBans()) != nullptr)
@@ -265,11 +263,23 @@ void ForEachActiveBans(Func &func)
             while(bLoop)
             {
                 SBanInfo* pInfo = new SBanInfo();
-                if(g_pBaseBans->GetBanInfo(pResult, pInfo)) {
-                    if(!func(pInfo)) {
+                auto result = co_await g_pBaseBans->GetBanInfo(pResult, pInfo);
+                if(!result)
+                {
+                    m_sLog->LogToFileEx(false, "[ForEachActiveBans] Failed to get ban info. Error code: %d", to_string(result.error()));
+                    delete pInfo;
+                    break;
+                }
+
+                if(result.value_or(false))
+                {
+                    if(!func(pInfo))
+                    {
                         bLoop = false;
                     }
-                } else {
+                }
+                else
+                {
                     bLoop = false;
                 }
                 delete pInfo;
@@ -277,6 +287,7 @@ void ForEachActiveBans(Func &func)
         }
         pQuery->Destroy();
     }
+    co_return result_void::ok();
 }
 
 class CAddItemActiveBans
@@ -320,7 +331,11 @@ void CreateMenuUnBan(ITopMenu* pTopMenu, int client)
     pMenu->SetDefaultTitle(szTitle);
 
     CAddItemActiveBans addItems(pMenu);
-    ForEachActiveBans(addItems);
+    auto res = sync_wait(ForEachActiveBans(addItems));
+    if(!res)
+    {
+        m_sLog->LogToFileEx(false, "[CreateMenuUnBan] Failed to retrieve active bans. Error code: %d", to_string(res.error()));
+    }
 
     AddFlags(MENUFLAG_BUTTON_EXITBACK);
     pMenu->Display(client, MENU_TIME_FOREVER);
@@ -375,10 +390,8 @@ void CMenuUnBan::OnMenuSelect2(IBaseMenu *menu, int client, unsigned int item, u
 
     if(g_pBaseBans)
     {
-        if(g_pBaseBans->UnBan(authID, client, "UnBan is admin menu"))
-        {
-            g_HL2->TextMsg(client, CHAT, "Player is unbanned!");
-        }
+        g_pBaseBans->UnBan(authID, client, "UnBan is admin menu");
+        g_HL2->TextMsg(client, CHAT, "Player is unbanned!");
     }
 
     auto pPlayer = playerhelpers->GetGamePlayer(client);

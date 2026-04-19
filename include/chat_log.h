@@ -20,7 +20,10 @@ public:
 
         SourceHook::String message(buffer);
 
-        co_await WriteToLog(std::move(message));
+        auto result = co_await WriteToLog(std::move(message));
+        if(!result)
+            Msg("Failed to write to ChatLog: ERROR: %d\n", to_string(result.error()));
+
         co_return;
     }
 

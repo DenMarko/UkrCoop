@@ -1891,7 +1891,8 @@ FUNC_NATIVE(AddBan)
 	m_sLog->LogToFileEx(false, "[native_AddBan] param: <%d><%d><%d><%s>", client, adminId, time, szReason);
 	if(g_pBaseBans)
 	{
-		return g_pBaseBans->AddBan(client, adminId, time, szReason) ? 1 : 0;
+		g_pBaseBans->AddBan(client, adminId, time, szReason);
+		return 1;
 	}
 
 	return pContext->ThrowNativeError("g_pBaseBans is nullptr");
@@ -1928,7 +1929,8 @@ FUNC_NATIVE(AddBanId)
 	m_sLog->LogToFileEx(false, "[native_AddBanId] param: <%s><%d><%d><%s>", szId, adminId, time, szReason);
 	if(g_pBaseBans)
 	{
-		return g_pBaseBans->AddBan(szId, adminId, time, szReason) ? 1 : 0;
+		g_pBaseBans->AddBan(szId, adminId, time, szReason);
+		return 1;
 	}
 	return pContext->ThrowNativeError("g_pBaseBans is nullptr");
 }
@@ -1958,7 +1960,8 @@ FUNC_NATIVE(UnBan)
 	m_sLog->LogToFileEx(false, "[native_AddBan] param: <%s><%d><%s>", szId, adminId, szReason);
 	if(g_pBaseBans)
 	{
-		return g_pBaseBans->UnBan(szId, adminId, szReason) ? 1 : 0;
+		g_pBaseBans->UnBan(szId, adminId, szReason);
+		return 1;
 	}
 	return pContext->ThrowNativeError("g_pBaseBans is nullptr");
 }

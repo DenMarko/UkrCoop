@@ -22,6 +22,8 @@ enum class error_code : int {
 
     // внутрішня логіка
     unexpected_state,
+
+    mysql_error,
 };
 
 // зручно для логування
@@ -39,6 +41,7 @@ inline const char* to_string(error_code e) noexcept {
     case error_code::request_cancelled: return "request_cancelled";
     case error_code::request_failed:    return "request_failed";
     case error_code::unexpected_state:  return "unexpected_state";
+    case error_code::mysql_error:       return "mysql_error";
     default:                            return "unknown";
     }
 }

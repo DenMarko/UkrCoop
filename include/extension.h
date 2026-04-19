@@ -30,6 +30,7 @@
 #include "async/thread_pool.h"
 #include "async/fire_and_forget.h"
 #include "async/task.h"
+#include "async/sync_away.h"
 
 template<size_t maxLenInChars> void _strcpy_safe( char (&pDest)[maxLenInChars], const char *pSrc)
 {

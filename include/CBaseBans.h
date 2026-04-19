@@ -3,7 +3,7 @@
 #include "extension.h"
 #include "IBaseBans.h"
 
-class CBaseBans : public IClientListener, public IBaseBans, public IBaseBansDB
+class CBaseBans : public IClientListener, public IBaseBans, public IBaseBansDB, public std::enable_shared_from_this<CBaseBans>
 {
 public:
 	CBaseBans();
@@ -13,14 +13,14 @@ public: // IClientListener
 	void OnClientAuthorized(int client, const char *authstring);
 
 public: // IBaseBans
-	bool AddBan(int clientID, int adminID, int time, const char *reason) override;
-	bool AddBan(const char *authId, int adminID, int time, const char *reason) override;
-	bool UnBan(const char* authId, int adminId, const char* reason) override;
+	fire_and_forget AddBan(int clientID, int adminID, int time, const char *reason) override;
+	fire_and_forget AddBan(const char *authId, int adminID, int time, const char *reason) override;
+	fire_and_forget UnBan(const char* authId, int adminId, const char* reason) override;
 
-	bool GetClientBanData(const char *authID, SBanInfo *info) override;
+	task<bool> GetClientBanData(const char *authID, SBanInfo *info) override;
 	IQuery* GetActiveBans( void ) override;
 	IResultSet* GetResultSet(IQuery* pQuery) override;
-	bool GetBanInfo(IResultSet* query, SBanInfo* info) override;
+	task<bool> GetBanInfo(IResultSet* query, SBanInfo* info) override;
 
 public: // IBaseBansDB
 	SourceMod::IDBDriver *GetDriver( void ) const override { return driver; }
@@ -28,8 +28,8 @@ public: // IBaseBansDB
 	void Release( void ) override { m_db = nullptr; }
 	
 private:
-	bool InitDB();
-	bool CheckAdminList();
+	task<bool> InitDB();
+	task<bool> CheckAdminList();
 
 private:
 	SourceMod::IDatabase *m_db;

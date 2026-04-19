@@ -51,7 +51,7 @@ fire_and_forget LM::InitLogMesseg(void)
 	snprintf(
 		header, 
 		sizeof(header), 
-		"LogMessege log file session started (file \"UKRCOOP_%04d%02d%02d.log\") (Version \"%s\")\n", 
+		"LogMessege log file session started (file \"UKRCOOP_%04d%02d%02d.log\") (Version \"%s\")", 
 		curtime.tm_year + 1900, curtime.tm_mon + 1, curtime.tm_mday, SMEXT_CONF_VERSION);
 
 	{
@@ -59,7 +59,7 @@ fire_and_forget LM::InitLogMesseg(void)
 		info.m_DailPrinted = false;
 	}
 
-	auto res = co_await WriteToLog(header);
+	auto res = co_await WriteToLog(header, true);
 	if(!res)
 	{
 		Msg("Failed to initialize LogMessege: ERROR: %d\n", to_string(res.error()));

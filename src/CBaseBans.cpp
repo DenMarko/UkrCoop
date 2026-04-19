@@ -3,8 +3,10 @@
 #include "log_messege.h"
 #include "Interface/IProps.h"
 
-IBaseBans *g_pBaseBans = nullptr;
-IBaseBansDB* g_pBanDB = nullptr;
+template<typename T> using result = expected<T, error_code>;
+
+std::shared_ptr<IBaseBans> g_pBaseBans = nullptr;
+std::shared_ptr<IBaseBansDB> g_pBanDB = nullptr;
 
 ReasonList *g_ListReason = nullptr;
 
@@ -95,24 +97,24 @@ private:
 class CBanLoader : public CAppSystem
 {
 public:
-	CBanLoader() : CAppSystem(), m_pBans(nullptr) { }
+	CBanLoader() : CAppSystem() { }
 	virtual ~CBanLoader() { OnUnload(); }
 
 	void OnLoad() override
 	{
-		m_pBans = new CBaseBans();
+		m_pBans = std::make_shared<CBaseBans>();
 		BanReasonLoadFromFile parse;
 	}
 
 	void OnAllLoaded() override
 	{
-		playerhelpers->AddClientListener(m_pBans);
+		playerhelpers->AddClientListener(m_pBans.get());
 	}
 
 	void OnUnload() override
 	{
 		RELEASE(g_ListReason)
-		RELEASE(m_pBans)
+		if(m_pBans != nullptr) { m_pBans.reset(); }
 	}
 
 	ResultType OnClientCommand(int client, const CCommand &args) override
@@ -131,7 +133,7 @@ public:
             {
                 if(args.ArgC() >= 4)
                 {
-                    g_pBaseBans->AddBan(atoi(args[1]), client, atoi(args[2]), args[3]);
+					g_pBaseBans->AddBan(atoi(args[1]), client, atoi(args[2]), args[3]);
                 }
                 else
                     g_HL2->TextMsg(client, CONSOLE, "[SM] To use the command type \"ukr_addban\" or \"ukr_addban <player_id> <time> <reason>\"");
@@ -144,7 +146,7 @@ public:
 			{
                 if(args.ArgC() >= 4)
                 {
-                    g_pBaseBans->AddBan(args[1], client, atoi(args[2]), args[3]);
+					g_pBaseBans->AddBan(args[1], client, atoi(args[2]), args[3]);
                 }
                 else
                     g_HL2->TextMsg(client, CONSOLE, "[SM] To use the command type \"ukr_addbanid\" or \"ukr_addbanid <authid> <time> <reason>\"");
@@ -157,7 +159,7 @@ public:
 			{
                 if(args.ArgC() >= 4)
                 {
-                    g_pBaseBans->UnBan(args[1], client, args[2]);
+					g_pBaseBans->UnBan(args[1], client, args[2]);
                 }
                 else
                     g_HL2->TextMsg(client, CONSOLE, "[SM] To use the command type \"ukr_unban\" or \"ukr_unban <authid> <reason>\"");
@@ -182,27 +184,33 @@ public:
 					return Pl_Handled;
 				}
 
-				bool bPrint = true;
-				while (bPrint)
+				[query = pQuery](IResultSet* pQueryRes, int client) -> fire_and_forget
 				{
-					SBanInfo *pInfo = new SBanInfo();
-					if(g_pBaseBans->GetBanInfo(pQueryRes, pInfo))
+					bool bPrint = true;
+					while (bPrint)
 					{
-						char buffer[512];
-						g_Sample.UTIL_Format(buffer, sizeof(buffer), "Name: %s\nAuthId: %s\nCreate: %d\nEnd: %d\nLenght: %d\nAdmin Name: %s\nReason: %s", 
-							pInfo->szName, 
-							pInfo->authId, 
-							pInfo->iBanCreate, 
-							pInfo->iBanEnds, 
-							pInfo->ilength, 
-							pInfo->szAdminName, 
-							pInfo->szReason);
+						SBanInfo *pInfo = new SBanInfo();
+						auto res = co_await g_pBaseBans->GetBanInfo(pQueryRes, pInfo);
+						if(res.value_or(false))
+						{
+							char buffer[512];
+							g_Sample.UTIL_Format(buffer, sizeof(buffer), "Name: %s\nAuthId: %s\nCreate: %d\nEnd: %d\nLenght: %d\nAdmin Name: %s\nReason: %s", 
+								pInfo->szName, 
+								pInfo->authId, 
+								pInfo->iBanCreate, 
+								pInfo->iBanEnds, 
+								pInfo->ilength, 
+								pInfo->szAdminName, 
+								pInfo->szReason);
 
-						g_HL2->TextMsg(client, CONSOLE, buffer);
-					} else { bPrint = false; }
-					delete pInfo;
-				}
-				pQuery->Destroy();
+							g_HL2->TextMsg(client, CONSOLE, buffer);
+						} else { bPrint = false; }
+						delete pInfo;
+					}
+					query->Destroy();
+
+				}(pQueryRes, client);
+
 			}
 			return Pl_Handled;
 		}
@@ -210,7 +218,7 @@ public:
 		return Pl_Continue;
 	}
 private:
-	CBaseBans *m_pBans;
+	std::shared_ptr<CBaseBans> m_pBans;
 };
 CBanLoader *g_pBanLoader = new CBanLoader();
 
@@ -361,8 +369,8 @@ private:
 
 CBaseBans::CBaseBans() : m_db(nullptr), driver(nullptr)
 {
-    g_pBanDB = this;
-	g_pBaseBans = this;
+    g_pBanDB = std::shared_ptr<IBaseBansDB>(this);
+	g_pBaseBans = std::shared_ptr<IBaseBans>(this);
 
 	char error[256];
 	if (!dbi->Connect("basebans", &driver, &m_db, false, error, sizeof(error)))
@@ -380,8 +388,28 @@ CBaseBans::CBaseBans() : m_db(nullptr), driver(nullptr)
 		return;
 	}
 
-	this->InitDB();
-	this->CheckAdminList();
+	[weak = weak_from_this()]() -> fire_and_forget {
+		if(auto self = weak.lock())
+		{
+			auto result = co_await self->InitDB();
+			if(!result)
+			{
+				m_sLog->LogToFileEx(false, "[CBaseBans::CBaseBans] Failed to initialize database. Error code: %d", to_string(result.error()));
+				co_return;
+			}
+
+			auto checkAdminListResult = co_await self->CheckAdminList();
+			if(!checkAdminListResult)
+			{
+				m_sLog->LogToFileEx(false, "[CBaseBans::CBaseBans] Failed to check admin list. Error code: %d", to_string(checkAdminListResult.error()));
+				co_return;
+			}
+		}
+		else
+		{
+			m_sLog->LogToFileEx(false, "[CBaseBans::CBaseBans] Failed to initialize CBaseBans instance");
+		}
+	}();
 }
 
 CBaseBans::~CBaseBans()
@@ -519,8 +547,14 @@ void CBaseBans::OnClientAuthorized(int client, const char *authstring)
 	dbi->AddToThreadQueue(pQuery, PrioQueue_High);
 }
 
-bool CBaseBans::InitDB()
+task<bool> CBaseBans::InitDB()
 {
+	co_await g_ThreadPool.schedule();
+
+	if(!m_db) {
+		co_return result<bool>::err(error_code::not_initialized);
+	}
+
 	SourceHook::String query;
 	query += "CREATE TABLE IF NOT EXISTS bb_bans (";
 	query += "bid INTEGER PRIMARY KEY AUTOINCREMENT,";
@@ -541,7 +575,7 @@ bool CBaseBans::InitDB()
 	if (!m_db->DoSimpleQuery(query.c_str()))
 	{
 		m_sLog->LogToFileEx(false, "Create tablet bb_bans is failed");
-		return false;
+		co_return result<bool>::err(error_code::mysql_error);
 	}
 
 	query.clear();
@@ -556,16 +590,18 @@ bool CBaseBans::InitDB()
 	if (!m_db->DoSimpleQuery(query.c_str()))
 	{
 		m_sLog->LogToFileEx(false, "Create tablet bb_admins is failed");
-		return false;
+		co_return result<bool>::err(error_code::mysql_error);
 	}
 
-	return true;
+	co_return result<bool>::ok(true);
 }
 
-bool CBaseBans::CheckAdminList()
+task<bool> CBaseBans::CheckAdminList()
 {
+	co_await g_ThreadPool.schedule();
+
     if(!m_db) {
-        return false;
+        co_return result<bool>::err(error_code::not_initialized);
 	}
 
 	AdminCash *parse = new AdminCash();
@@ -573,7 +609,7 @@ bool CBaseBans::CheckAdminList()
 	if (!begin)
 	{
 		delete parse;
-		return false;
+		co_return result<bool>::err(error_code::not_found);
 	}
 
 	while (begin)
@@ -612,27 +648,29 @@ bool CBaseBans::CheckAdminList()
 	}
 
 	delete parse;
-	return true;
+	co_return result<bool>::ok(true);
 }
 
-bool CBaseBans::AddBan(int clientID, int adminID, int time, const char* reason)
+fire_and_forget CBaseBans::AddBan(int clientID, int adminID, int time, const char* reason)
 {
 	m_sLog->LogToFileEx(false, "[CBaseBans::AddBan] param: <%d><%d><%d><%s>", clientID, adminID, time, reason);
+	
+	co_await g_ThreadPool.schedule();
 	if(m_db == nullptr)
 	{
-		return false;
+		co_return;
 	}
 
 	SourceHook::String query;
 	auto pPlayer = playerhelpers->GetGamePlayer(clientID);
 	if (!pPlayer) {
 		m_sLog->LogToFileEx(false, "[CBaseBans::AddBan] pPlayer is null");
-		return false;
+		co_return;
 	}
 
 	const char *szAuthId = pPlayer->GetSteam2Id();
 	if (szAuthId[0] == 'B' || szAuthId[9] == 'L') {
-		return false;
+		co_return;
 	}
 
 	auto pAdmin = playerhelpers->GetGamePlayer(adminID);
@@ -668,7 +706,7 @@ bool CBaseBans::AddBan(int clientID, int adminID, int time, const char* reason)
 	if(!m_db->DoSimpleQuery(query.c_str()))
 	{
 		m_sLog->LogToFileEx(false, "[CBaseBans::AddBan] Last Error: %s", m_db->GetError());
-		return false;
+		co_return;
     }
 
 	if (pPlayer->IsConnected() || !pPlayer->IsFakeClient())
@@ -677,20 +715,21 @@ bool CBaseBans::AddBan(int clientID, int adminID, int time, const char* reason)
 		gamehelpers->AddDelayedKick(clientID, pPlayer->GetUserId(), reason);
 	}
 
-	return true;
+	co_return;
 }
 
-bool CBaseBans::AddBan(const char* authId, int adminID, int time, const char* reason)
+fire_and_forget CBaseBans::AddBan(const char* authId, int adminID, int time, const char* reason)
 {
 	m_sLog->LogToFileEx(false, "[CBaseBans::AddBan] param: <%s><%d><%d><%s>", authId, adminID, time, reason);
+	co_await g_ThreadPool.schedule();
 
 	if(m_db == nullptr)
 	{
-		return false;
+		co_return;
 	}
 
 	if (authId[0] == 'B' || authId[9] == 'L') {
-		return false;
+		co_return;
 	}
 
 	SourceHook::String query;
@@ -708,7 +747,7 @@ bool CBaseBans::AddBan(const char* authId, int adminID, int time, const char* re
 			{
 				m_sLog->LogToFileEx(false, "[CBaseBans::AddBan] Ban is active");
 				pRes->Destroy();
-				return true;
+				co_return;
 			}
 		}
 		pRes->Destroy();
@@ -738,22 +777,24 @@ bool CBaseBans::AddBan(const char* authId, int adminID, int time, const char* re
 	if(!m_db->DoSimpleQuery(query.c_str()))
     {
 		m_sLog->LogToFileEx(false, "[CBaseBans::AddBan] Last error: %s", m_db->GetError());
-		return false;
+		co_return;
     }
 
-	return true;
+	co_return;
 }
 
-bool CBaseBans::UnBan(const char* authId, int adminId, const char* reason)
+fire_and_forget CBaseBans::UnBan(const char* authId, int adminId, const char* reason)
 {
 	m_sLog->LogToFileEx(false, "[CBaseBans::UnBan] param: <%s><%d><%s>", authId, adminId, reason);
+	co_await g_ThreadPool.schedule();
+
 	if(m_db == nullptr)
 	{
-		return false;
+		co_return;
 	}
 	
 	if (authId[0] == 'B' || authId[9] == 'L') {
-		return false;
+		co_return;
 	}
 
 	SourceHook::String buffer;
@@ -766,27 +807,27 @@ bool CBaseBans::UnBan(const char* authId, int adminId, const char* reason)
 	IQuery *pRes = nullptr;
 	if ((pRes = m_db->DoQuery(buffer.c_str())) == nullptr)
 	{
-		return false;
+		co_return;
 	}
 
 	IResultSet* pResSet = nullptr;
 	if ((pResSet = pRes->GetResultSet()) == nullptr)
 	{
 		pRes->Destroy();
-		return false;
+		co_return;
 	}
 
 	if (!pResSet->GetRowCount())
 	{
 		pRes->Destroy();
-		return true;
+		co_return;
 	}
 
 	IResultRow *pRow = nullptr;
 	if ((pRow = pResSet->CurrentRow()) == nullptr)
 	{
 		pRes->Destroy();
-		return false;
+		co_return;
 	}
 
 	int bid;
@@ -807,17 +848,18 @@ bool CBaseBans::UnBan(const char* authId, int adminId, const char* reason)
 	buf += bid;
 	
 	if (!m_db->DoSimpleQuery(buf.c_str())) {
-		return false;
+		co_return;
 	}
 
-	return true;
+	co_return;
 }
 
-bool CBaseBans::GetClientBanData(const char *authID, SBanInfo *info)
+task<bool> CBaseBans::GetClientBanData(const char *authID, SBanInfo *info)
 {
+	co_await g_ThreadPool.schedule();
 	if(info == nullptr)
 	{
-    	return false;
+		co_return result<bool>::err(error_code::invalid_argument);
 	}
 
 	SourceHook::String query;
@@ -828,20 +870,20 @@ bool CBaseBans::GetClientBanData(const char *authID, SBanInfo *info)
 	IQuery* pRes = nullptr;
 	if((pRes = m_db->DoQuery(query.c_str())) == nullptr)
 	{
-		return false;
+		co_return result<bool>::err(error_code::mysql_error);
 	}
 
 	IResultSet* pSet = nullptr;
 	if((pSet = pRes->GetResultSet()) == nullptr)
 	{
 		pRes->Destroy();
-		return false;
+		co_return result<bool>::err(error_code::mysql_error);
 	}
 
 	if(pSet->GetRowCount() == 0)
 	{
 		pRes->Destroy();
-		return false;
+		co_return result<bool>::err(error_code::not_found);
 	}
 
 	IResultRow *pRow = pSet->CurrentRow();
@@ -878,11 +920,11 @@ bool CBaseBans::GetClientBanData(const char *authID, SBanInfo *info)
 			}
 			pQuery->Destroy();
 		}
-		return true;
+		co_return result<bool>::ok(true);
 	}
 
 	pRes->Destroy();
-	return false;
+	co_return result<bool>::ok(false);
 }
 
 IQuery* CBaseBans::GetActiveBans()
@@ -920,11 +962,12 @@ IResultSet *CBaseBans::GetResultSet(IQuery *pQuery)
     return pSet;
 }
 
-bool CBaseBans::GetBanInfo(IResultSet *pQueryRes, SBanInfo *info)
+task<bool> CBaseBans::GetBanInfo(IResultSet *pQueryRes, SBanInfo *info)
 {
+	co_await g_ThreadPool.schedule();
 	if(!pQueryRes || !info)
 	{
-		return false;
+		co_return result<bool>::err(error_code::invalid_argument);
 	}
 
 	IResultRow *pRow = pQueryRes->FetchRow();
@@ -960,8 +1003,8 @@ bool CBaseBans::GetBanInfo(IResultSet *pQueryRes, SBanInfo *info)
 			}
 			pQuery->Destroy();
 		}
-		return true;
+		co_return result<bool>::ok(true);
 	}
 	
-    return false;
+    co_return result<bool>::ok(false);
 }
