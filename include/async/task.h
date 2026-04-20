@@ -171,6 +171,13 @@ public:
     // використовується при передачі task як тимчасового значення
     auto operator co_await() const&& noexcept {
         struct awaitable : awaitable_base {
+            ~awaitable() {
+                if(this->handle) {
+                    // якщо await_suspend не викликався (await_ready == true), то потрібно знищити корутину
+                    this->handle.destroy();
+                }
+            }
+
             expected<T, E> await_resume() {
                 assert(this->handle && this->handle.promise().result.has_value());
                 return std::move(*this->handle.promise().result); // move — без копій
@@ -280,6 +287,13 @@ public:
 
     auto operator co_await() const&& noexcept {
         struct awaitable : awaitable_base {
+            ~awaitable() {
+                if(this->handle) {
+                    // якщо await_suspend не викликався (await_ready == true), то потрібно знищити корутину
+                    this->handle.destroy();
+                }
+            }
+
             expected<void, E> await_resume() {
                 assert(this->handle && this->handle.promise().result.has_value());
                 return std::move(*this->handle.promise().result);
