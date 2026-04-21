@@ -26,8 +26,14 @@ LM::LM()
 	luabridge::setGlobal(g_Sample.GetLuaState(), this, "Log");
 }
 
-// LM::InitLogMesseg() — корутина fire_and_forget, 
-// яка на фоні через g_ThreadPool.schedule() ініціалізує щоденний лог-файл UKRCOOP_YYYYMMDD.log, 
+LM::~LM()
+{
+	if(m_file.is_open())
+		m_file.close();
+}
+
+// LM::InitLogMesseg() — корутина fire_and_forget,
+// яка на фоні через g_ThreadPool.schedule() ініціалізує щоденний лог-файл UKRCOOP_YYYYMMDD.log,
 // встановлює імʼя файлу й дату в info, а потім записує початковий заголовок у лог.
 fire_and_forget LM::InitLogMesseg(void)
 {
@@ -51,7 +57,7 @@ fire_and_forget LM::InitLogMesseg(void)
 	snprintf(
 		header, 
 		sizeof(header), 
-		"LogMessege log file session started (file \"UKRCOOP_%04d%02d%02d.log\") (Version \"%s\")", 
+		"LogMessege log file session started (file \"logs/UKRCOOP_%04d%02d%02d.log\") (Version \"%s\")", 
 		curtime.tm_year + 1900, curtime.tm_mon + 1, curtime.tm_mday, SMEXT_CONF_VERSION);
 
 	{
@@ -94,28 +100,58 @@ task<bool> LM::WriteToLog(SourceHook::String message, bool silent)
 		UpdateFileInfoIfNeeded(&curtime);
 		filename = info.m_NrmFileName;
 		need_update = info.m_DailPrinted;
-		if(need_update)
-			info.m_DailPrinted = false;
 	}
 
-	FILE* fp = fopen(filename.c_str(), "a+");
-	if (!fp)
-		co_return result<bool>::err(error_code::file_open_failed);
+	if(!m_file.is_open())
+	{
+		auto open_res = co_await m_file.open(
+			filename.c_str(),
+			OpenFlags::Write | OpenFlags::Append | OpenFlags::Create
+		);
+
+		if (!open_res) {
+			co_return result<bool>::err(open_res.error());
+		}
+	}
 
 	char data[64];
 	strftime(data, sizeof(data), "%d.%m.%Y %H:%M:%S", &curtime);
 
 	if(need_update)
 	{
-		fprintf(fp,
-			"L [%s] LogMessege log file session started (file \"UKRCOOP_%04d%02d%02d.log\") (Version \"%s\")\n",
-			data, curtime.tm_year + 1900, curtime.tm_mon + 1, curtime.tm_mday, SMEXT_CONF_VERSION);
+		char header[512];
+		int len = snprintf(header, sizeof(header),
+			"LogMessege log file session started (file \"logs/UKRCOOP_%04d%02d%02d.log\") (Version \"%s\")",
+			curtime.tm_year + 1900, 
+			curtime.tm_mon + 1, 
+			curtime.tm_mday, 
+			SMEXT_CONF_VERSION
+		);
+
+		auto write_res = co_await m_file.write(header, static_cast<size_t>(len));
+		if(!write_res) {
+			co_return result<bool>::err(write_res.error());
+		}
+
+		{
+			std::lock_guard<std::mutex> lock(m_mutex);
+			info.m_DailPrinted = false;
+		}
 	}
 
-	fprintf(fp, "L [%s] %s\n", data, message.c_str());
-	fclose(fp);
+	char log_entry[4096];
+	int log_len = snprintf(log_entry, sizeof(log_entry), "L [%s] %s\n", data, message.c_str());
+	auto write_res = co_await m_file.write(log_entry, static_cast<size_t>(log_len));
+	if(!write_res) {
+		co_return result<bool>::err(write_res.error());
+	}
 
 	if (!silent) g_SMAPI->ConPrintf("[%s] %s\n", data, message.c_str());
+
+	auto flush_res = co_await m_file.flush();
+	if(!flush_res) {
+		co_return result<bool>::err(flush_res.error());
+	}
 
     co_return result<bool>::ok(true);
 }
@@ -134,6 +170,9 @@ void LM::UpdateFileInfoIfNeeded(const tm *curtime)
 		curtime->tm_year + 1900, 
 		curtime->tm_mon + 1, 
 		curtime->tm_mday);
+
+		if(m_file.is_open())
+			m_file.close();
 
 		info.m_NrmFileName.assign(Path);
 		info.m_NrmCurDay = curtime->tm_mday;

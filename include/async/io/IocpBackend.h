@@ -27,12 +27,14 @@ struct IocpOp final : IoOp {
     DWORD      len = 0;
     bool       is_read = false;
 
+    // Записує 64-бітний файловий offset у поля OVERLAPPED.
     void set_offset(int64_t offset) noexcept {
         ov.Offset = static_cast<DWORD>(offset & 0xFFFFFFFF);
         ov.OffsetHigh = static_cast<DWORD>((offset >> 32) & 0xFFFFFFFF);
     }
 
 protected:
+    // Делегує submit своєму IOCP backend-у.
     void submit() noexcept override;   // реалізація після IocpBackend
     // submit_if_sync() — no-op (IOCP завжди async крім FlushFileBuffers)
 };
@@ -52,23 +54,27 @@ protected:
 // ============================================================
 class IocpBackend final : public IoBackend {
 public:
+    // Створює IOCP port і готує backend до старту completion loop.
     explicit IocpBackend(DWORD concurrent_threads = 1) {
         port_ = CreateIoCompletionPort(
             INVALID_HANDLE_VALUE, NULL, 0, concurrent_threads);
         assert(port_ != NULL && "CreateIoCompletionPort failed");
     }
 
+    // Гарантує зупинку completion thread і закриття порту.
     ~IocpBackend() override {
         stop();
         if (port_) CloseHandle(port_);
     }
 
     // ── lifecycle ──────────────────────────────────────────
+    // Запускає completion loop в окремому потоці.
     void start() override {
         running_.store(true, std::memory_order_release);
         thread_ = std::thread([this] { completion_loop(); });
     }
 
+    // Зупиняє completion loop і коректно завершує worker-потік.
     void stop() override {
         if (!running_.exchange(false, std::memory_order_acq_rel))
             return;
@@ -88,6 +94,7 @@ public:
 
     // ── open / close ───────────────────────────────────────
     // flags — POSIX-сумісні (O_RDONLY, O_WRONLY, O_RDWR, O_CREAT, O_TRUNC)
+    // Відкриває файл у overlapped-режимі та прив'язує його до IOCP.
     file_handle_t open(const char* path, int flags, int /*mode*/) override {
         DWORD access = 0;
         DWORD creation = OPEN_EXISTING;
@@ -120,12 +127,14 @@ public:
         return reinterpret_cast<file_handle_t>(h);
     }
 
+    // Закриває native Windows file handle.
     void close(file_handle_t fd) override {
         auto h = fd_to_handle(fd);
         if (h != INVALID_HANDLE_VALUE) CloseHandle(h);
     }
 
     // ── prep ───────────────────────────────────────────────
+    // Готує read-операцію для подальшого ReadFile(..., &ov).
     void prep_read(IoOp* base, file_handle_t fd,
         void* buf, size_t len, int64_t offset) noexcept override
     {
@@ -140,6 +149,7 @@ public:
         op->ov.hEvent = nullptr;
     }
 
+    // Готує write-операцію для подальшого WriteFile(..., &ov).
     void prep_write(IoOp* base, file_handle_t fd,
         const void* buf, size_t len, int64_t offset) noexcept override
     {
@@ -153,6 +163,7 @@ public:
         op->ov.hEvent = nullptr;
     }
 
+    // Готує fsync-операцію через FlushFileBuffers.
     void prep_fsync(IoOp* base, file_handle_t fd) noexcept override {
         auto* op = static_cast<IocpOp*>(base);
         op->backend = this;
@@ -162,6 +173,7 @@ public:
     }
 
     // submit_op — викликається з IocpOp::submit() через await_suspend
+    // Реєструє I/O в ядрі або синхронно виконує fsync.
     void submit_op(IocpOp* op) noexcept {
         // fsync — FlushFileBuffers синхронний
         if (op->buf == nullptr && op->len == 0) {
@@ -185,7 +197,13 @@ public:
         // при ERROR_IO_PENDING — completion_loop відновить корутину
     }
 
+    // Адаптер для делегуючих IoOp-типів на кшталт UniOp.
+    void submit_op(IoOp* base) noexcept override {
+        submit_op(static_cast<IocpOp*>(base));
+    }
+
     // ── синхронні ──────────────────────────────────────────
+    // Виконує синхронний seek для відкритого file handle.
     int64_t seek(file_handle_t fd, int64_t offset, int whence) noexcept override {
         HANDLE h = fd_to_handle(fd);
         DWORD  method;
@@ -201,11 +219,13 @@ public:
         return result.QuadPart;
     }
 
+    // Обрізає файл до нового розміру.
     bool truncate(file_handle_t fd, int64_t size) noexcept override {
         if (seek(fd, size, SEEK_SET) < 0) return false;
         return SetEndOfFile(fd_to_handle(fd)) != 0;
     }
 
+    // Повертає поточний розмір файлу.
     int64_t file_size(file_handle_t fd) noexcept override {
         LARGE_INTEGER sz{};
         if (!GetFileSizeEx(fd_to_handle(fd), &sz)) return -1;
@@ -214,6 +234,7 @@ public:
 
 private:
     // ── completion loop ────────────────────────────────────
+    // Читає завершені пакети з IOCP і завершує відповідні await-операції.
     void completion_loop() {
         while (true) {
             DWORD      bytes = 0;
@@ -236,6 +257,7 @@ private:
         }
     }
 
+    // Перетворює абстрактний file_handle_t назад у Windows HANDLE.
     static HANDLE fd_to_handle(file_handle_t fd) noexcept {
         return reinterpret_cast<HANDLE>(fd);
     }
@@ -245,6 +267,7 @@ private:
     std::atomic<bool> running_{ false };
 };
 
+// Запускає backend-specific submit для поточної IOCP операції.
 inline void IocpOp::submit() noexcept {
     static_cast<IocpBackend*>(backend)->submit_op(this);
 }

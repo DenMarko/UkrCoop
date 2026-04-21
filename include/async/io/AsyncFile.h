@@ -3,20 +3,17 @@
 
 #include <cstdio>
 #include <string>
-#include "sh_string.h"
 #include "IoBackend.h"
 #include "../task.h"
 #include "../error.h"
 #include "../expected.h"
 
 #ifndef _WIN32
-#   include <fcntl.h>
-#   include <unistd.h>
-#   include "IouringBackend.h"
+#  include <fcntl.h>
+#  include <unistd.h>
 #else
-#   define WIN32_LEAN_AND_MEAN
-#   include <windows.h>
-#   include "IocpBackend.h"
+#  define WIN32_LEAN_AND_MEAN
+#  include <windows.h>
 #endif
 
 // ============================================================
@@ -31,7 +28,8 @@ enum class OpenFlags : unsigned {
 };
 
 inline OpenFlags operator|(OpenFlags a, OpenFlags b) {
-    return static_cast<OpenFlags>(static_cast<unsigned>(a) | static_cast<unsigned>(b));
+    return static_cast<OpenFlags>(
+        static_cast<unsigned>(a) | static_cast<unsigned>(b));
 }
 inline bool flag_set(OpenFlags flags, OpenFlags bit) noexcept {
     return (static_cast<unsigned>(flags) & static_cast<unsigned>(bit)) != 0;
@@ -50,47 +48,44 @@ inline bool flag_set(OpenFlags flags, OpenFlags bit) noexcept {
 // ============================================================
 template<typename Op>
 class AsyncFile {
-private:
-
-    static constexpr file_handle_t INVALID_HANDLE = static_cast<file_handle_t>(-1);
-
 public:
+    // Прив'язує файлову обгортку до конкретного backend-а.
     explicit AsyncFile(IoBackend& backend) noexcept
-        : backend_(backend) {}
+        : backend_(backend) {
+    }
 
+    // Закриває файл при знищенні обгортки.
     ~AsyncFile() { close(); }
 
     AsyncFile(const AsyncFile&) = delete;
     AsyncFile& operator=(const AsyncFile&) = delete;
 
-    AsyncFile(AsyncFile&& other) noexcept
-        : backend_(other.backend_), handle_(other.handle_), pos_(other.pos_)
+    // Переміщує відкритий дескриптор і поточну позицію без копіювання.
+    AsyncFile(AsyncFile&& o) noexcept
+        : backend_(o.backend_), fd_(o.fd_), pos_(o.pos_)
     {
-        other.handle_ = INVALID_HANDLE;
-        other.pos_ = 0;
+        o.fd_ = INVALID_FD;
+        o.pos_ = 0;
     }
 
-    bool is_open() const noexcept { return handle_ != INVALID_HANDLE; }
+    // Перевіряє, чи файл зараз відкритий.
+    bool is_open() const noexcept { return fd_ != INVALID_FD; }
 
     // ── open ──────────────────────────────────────────────
-    task<void> open(const char* path, OpenFlags flags)
-    {
-        if(is_open()) close();
+    // Відкриває файл і ініціалізує поточну позицію доступу.
+    task<void> open(const char* path, OpenFlags flags) {
+        if (is_open()) close();
 
-        int native_flags = to_native_flags(flags);
-        handle_ = backend_.open(path, native_flags, 0644);
+        int native = to_native_flags(flags);
+        fd_ = backend_.open(path, native, 0644);
         pos_ = 0;
 
-        if(handle_ == INVALID_HANDLE)
-        {
+        if (fd_ == INVALID_FD)
             co_return expected<void>::err(error_code::file_open_failed);
-        }
 
-        if(flag_set(flags, OpenFlags::Append))
-        {
-            int64_t end = backend_.seek(handle_, 0, SEEK_END);
-            if(end < 0)
-            {
+        if (flag_set(flags, OpenFlags::Append)) {
+            int64_t end = backend_.seek(fd_, 0, SEEK_END);
+            if (end < 0) {
                 close();
                 co_return expected<void>::err(error_code::file_open_failed);
             }
@@ -100,43 +95,41 @@ public:
         co_return expected<void>::ok();
     }
 
-    void close() noexcept
-    {
-        if(is_open())
-        {
-            backend_.close(handle_);
-            handle_ = INVALID_HANDLE;
+    // Закриває відкритий файл і скидає внутрішній стан.
+    void close() noexcept {
+        if (is_open()) {
+            backend_.close(fd_);
+            fd_ = INVALID_FD;
             pos_ = 0;
         }
     }
 
     // ── read ──────────────────────────────────────────────
-    task<size_t> read(void*buffer, size_t len)
-    {
-        if(!is_open())
+    // Виконує одну асинхронну операцію читання з поточної позиції.
+    task<size_t> read(void* buf, size_t len) {
+        if (!is_open())
             co_return expected<size_t>::err(error_code::not_initialized);
 
         Op op;
-        backend_.prep_read(&op, handle_, buffer, len, pos_);
-        IoResult res = co_await op;
+        backend_.prep_read(&op, fd_, buf, len, pos_);
+        IoResult r = co_await op;
 
-        if(!res.ok())
+        if (!r.ok())
             co_return expected<size_t>::err(error_code::request_failed);
 
-        pos_ += res.bytes;
-        co_return static_cast<size_t>(res.bytes);
+        pos_ += r.bytes;
+        co_return static_cast<size_t>(r.bytes);
     }
 
-    task<size_t> read_exact(void* buffer, size_t len)
-    {
-        size_t      total = 0;
-        uint8_t*    dst = static_cast<uint8_t*>(buffer);
+    // Читає буфер повністю або зупиняється на EOF/помилці.
+    task<size_t> read_exact(void* buf, size_t len) {
+        size_t   total = 0;
+        uint8_t* dst = static_cast<uint8_t*>(buf);
 
-        while(total < len)
-        {
+        while (total < len) {
             auto r = co_await read(dst + total, len - total);
-            if(!r) co_return expected<size_t>::err(r.error());
-            if(*r == 0) break; // EOF
+            if (!r)   co_return expected<size_t>::err(r.error());
+            if (*r == 0) break;
             total += *r;
         }
 
@@ -144,155 +137,147 @@ public:
     }
 
     // ── write ─────────────────────────────────────────────
-    task<size_t> write(const void* buffer, size_t len)
-    {
-        if(!is_open())
+    // Виконує одну асинхронну операцію запису з поточної позиції.
+    task<size_t> write(const void* buf, size_t len) {
+        if (!is_open())
             co_return expected<size_t>::err(error_code::not_initialized);
 
         Op op;
-        backend_.prep_write(&op, handle_, buffer, len, pos_);
-        IoResult res = co_await op;
+        backend_.prep_write(&op, fd_, buf, len, pos_);
+        IoResult r = co_await op;
 
-        if(!res.ok())
+        if (!r.ok())
             co_return expected<size_t>::err(error_code::write_failed);
 
-        pos_ += res.bytes;
-        co_return static_cast<size_t>(res.bytes);
+        pos_ += r.bytes;
+        co_return static_cast<size_t>(r.bytes);
     }
 
-    task<void> write_all(const void* buffer, size_t len)
-    {
-        size_t      total = 0;
-        const uint8_t* src = static_cast<const uint8_t*>(buffer);
+    // Повторює write, поки весь буфер не буде записано.
+    task<void> write_all(const void* buf, size_t len) {
+        size_t         written = 0;
+        const uint8_t* src = static_cast<const uint8_t*>(buf);
 
-        while(total < len)
-        {
-            auto r = co_await write(src + total, len - total);
-            if(!r) co_return expected<void>::err(r.error());
-            total += *r;
+        while (written < len) {
+            auto r = co_await write(src + written, len - written);
+            if (!r) co_return expected<void>::err(r.error());
+            written += *r;
         }
 
         co_return expected<void>::ok();
     }
 
-    task<void> write_str(const char* str)
-    {
-        return write_all(str, cstrlen(str));
+    // Записує C-рядок без термінального нуля.
+    task<void> write_str(const char* s) {
+        return write_all(s, cstrlen(s));
     }
 
-    task<void> write_str(const char* str, size_t len)
-    {
-        return write_all(str, len);
+    // Записує рядок заданої довжини.
+    task<void> write_str(const char* s, size_t len) {
+        return write_all(s, len);
     }
 
-    task<void> write_str(const std::string& str)
-    {
-        return write_all(str.data(), str.size());
-    }
-
-    task<void> write_str(const SourceHook::String &str)
-    {
-        return write_all(str.c_str(), str.size());
+    // Записує owning-копію std::string, безпечну для async lifetime.
+    task<void> write_str(std::string s) {
+        return write_all(s.data(), s.size());
     }
 
     // ── seek / tell ───────────────────────────────────────
-    task<int64_t> seek(int64_t offset, int whence = SEEK_SET) noexcept
-    {
-        if(!is_open())
-            co_return expected<int64_t>::err(error_code::not_initialized);
+    // Переміщує файлову позицію через backend-specific seek.
+    expected<int64_t> seek(int64_t offset, int whence = SEEK_SET) noexcept {
+        if (!is_open())
+            return expected<int64_t>::err(error_code::not_initialized);
 
-        int64_t new_pos = backend_.seek(handle_, offset, whence);
-        if(new_pos < 0)
-            co_return expected<int64_t>::err(error_code::request_failed);
+        int64_t pos = backend_.seek(fd_, offset, whence);
+        if (pos < 0)
+            return expected<int64_t>::err(error_code::request_failed);
 
-        pos_ = new_pos;
-        co_return expected<int64_t>::ok(new_pos);
+        pos_ = pos;
+        return expected<int64_t>::ok(pos);
     }
 
+    // Повертає кешовану поточну позицію.
     int64_t tell() const noexcept { return pos_; }
 
     // ── flush / fsync ─────────────────────────────────────
-    task<void> flush()
-    {
-        if(!is_open())
+    // Синхронізує буфери файлу з диском.
+    task<void> flush() {
+        if (!is_open())
             co_return expected<void>::err(error_code::not_initialized);
 
         Op op;
-        backend_.prep_fsync(&op, handle_);
-        IoResult res = co_await op;
+        backend_.prep_fsync(&op, fd_);
+        IoResult r = co_await op;
 
-        if(!res.ok())
-            co_return expected<void>::err(error_code::request_failed);
+        if (!r.ok())
+            co_return expected<void>::err(error_code::write_failed);
 
         co_return expected<void>::ok();
     }
 
     // ── size / truncate ───────────────────────────────────
-    task<int64_t> size() noexcept
-    {
-        if(!is_open())
-            co_return expected<int64_t>::err(error_code::not_initialized);
+    // Повертає поточний розмір файлу.
+    expected<int64_t> size() noexcept {
+        if (!is_open())
+            return expected<int64_t>::err(error_code::not_initialized);
 
-        int64_t sz = backend_.file_size(handle_);
-        if(sz < 0)
-            co_return expected<int64_t>::err(error_code::request_failed);
+        int64_t s = backend_.file_size(fd_);
+        if (s < 0)
+            return expected<int64_t>::err(error_code::request_failed);
 
-        co_return expected<int64_t>::ok(sz);
+        return expected<int64_t>::ok(s);
     }
 
-    task<void> truncate(int64_t size) noexcept
-    {
-        if(!is_open())
-            co_return expected<void>::err(error_code::not_initialized);
+    // Обрізає файл до нового розміру.
+    expected<void> truncate(int64_t new_size) noexcept {
+        if (!is_open())
+            return expected<void>::err(error_code::not_initialized);
 
-        if(!backend_.truncate(handle_, size))
-            co_return expected<void>::err(error_code::request_failed);
+        if (!backend_.truncate(fd_, new_size))
+            return expected<void>::err(error_code::write_failed);
 
-        if(pos_ > size) pos_ = size; // якщо поточна позиція за межами нового розміру, переміщаємо її в кінець
-
-        co_return expected<void>::ok();
+        if (pos_ > new_size) pos_ = new_size;
+        return expected<void>::ok();
     }
 
-    expected<void> truncate_at_pos() noexcept
-    {
+    // Обрізає файл до поточної позиції.
+    expected<void> truncate_at_pos() noexcept {
         return truncate(pos_);
     }
 
+
+
 private:
-    static int to_native_flags(OpenFlags f) noexcept
-    {
+    // Перекладає кросплатформні прапори у native open flags.
+    static int to_native_flags(OpenFlags f) noexcept {
         int flags = 0;
         bool rd = flag_set(f, OpenFlags::Read);
-        bool wr = flag_set(f, OpenFlags::Write) || flag_set(f, OpenFlags::Append);
+        bool wr = flag_set(f, OpenFlags::Write)
+            || flag_set(f, OpenFlags::Append);
 
-        if(rd && wr) flags = O_RDWR;
-        else if(wr) flags = O_WRONLY;
-        else flags = O_RDONLY;
+        if (rd && wr) flags = O_RDWR;
+        else if (wr)       flags = O_WRONLY;
+        else               flags = O_RDONLY;
 
-        if(flag_set(f, OpenFlags::Append)) flags |= O_APPEND;
-        if(flag_set(f, OpenFlags::Trunc)) flags |= O_TRUNC;
-        if(flag_set(f, OpenFlags::Create)) flags |= O_CREAT;
+        if (flag_set(f, OpenFlags::Create)) flags |= O_CREAT;
+        if (flag_set(f, OpenFlags::Trunc))  flags |= O_TRUNC;
+        if (flag_set(f, OpenFlags::Append)) flags |= O_APPEND;
 
         return flags;
     }
 
-    static size_t cstrlen(const char* str) noexcept
-    {
-        const char* s = str;
-        while (*s) ++s;
-        return static_cast<size_t>(s - str);
+    // Рахує довжину C-рядка без залежності від libc strlen.
+    static size_t cstrlen(const char* s) noexcept {
+        const char* p = s; while (*p) ++p;
+        return static_cast<size_t>(p - s);
     }
 
-    IoBackend &backend_;
-    file_handle_t handle_ = INVALID_HANDLE;
-    int64_t pos_ = 0;
-};
+    static constexpr file_handle_t INVALID_FD = static_cast<file_handle_t>(-1);
 
-#ifndef _WIN32
-using AsyncFileOP = AsyncFile<IouringOp>;
-#else
-using AsyncFileOP = AsyncFile<IocpOp>;
-#endif
+    IoBackend& backend_;
+    file_handle_t fd_ = INVALID_FD;
+    int64_t    pos_ = 0;
+};
 
 // ── Файлові утиліти (не залежать від template параметра Op) ─
 namespace async_fs {

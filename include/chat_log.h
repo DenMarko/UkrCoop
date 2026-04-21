@@ -9,6 +9,7 @@ class chat_log
 {
 public:
     chat_log() = default;
+    ~chat_log();
 
     fire_and_forget InitChatLog();
 
@@ -36,6 +37,7 @@ private:
 
     CLogInit    info;
     std::mutex  m_mutex;
+    AsyncFileAuto m_file;
 };
 
 extern chat_log* m_sChatLog;
