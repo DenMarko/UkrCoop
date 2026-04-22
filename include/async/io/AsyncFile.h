@@ -20,10 +20,10 @@
 // OpenFlags
 // ============================================================
 enum class OpenFlags : unsigned {
-    Read = 1 << 0,
-    Write = 1 << 1,
+    Read   = 1 << 0,
+    Write  = 1 << 1,
     Append = 1 << 2,
-    Trunc = 1 << 3,
+    Trunc  = 1 << 3,
     Create = 1 << 4,
 };
 
@@ -51,20 +51,19 @@ class AsyncFile {
 public:
     // Прив'язує файлову обгортку до конкретного backend-а.
     explicit AsyncFile(IoBackend& backend) noexcept
-        : backend_(backend) {
-    }
+        : backend_(backend) {}
 
     // Закриває файл при знищенні обгортки.
     ~AsyncFile() { close(); }
 
-    AsyncFile(const AsyncFile&) = delete;
+    AsyncFile(const AsyncFile&)            = delete;
     AsyncFile& operator=(const AsyncFile&) = delete;
 
     // Переміщує відкритий дескриптор і поточну позицію без копіювання.
     AsyncFile(AsyncFile&& o) noexcept
         : backend_(o.backend_), fd_(o.fd_), pos_(o.pos_)
     {
-        o.fd_ = INVALID_FD;
+        o.fd_  = INVALID_FD;
         o.pos_ = 0;
     }
 
@@ -77,7 +76,7 @@ public:
         if (is_open()) close();
 
         int native = to_native_flags(flags);
-        fd_ = backend_.open(path, native, 0644);
+        fd_  = backend_.open(path, native, 0644);
         pos_ = 0;
 
         if (fd_ == INVALID_FD)
@@ -99,7 +98,7 @@ public:
     void close() noexcept {
         if (is_open()) {
             backend_.close(fd_);
-            fd_ = INVALID_FD;
+            fd_  = INVALID_FD;
             pos_ = 0;
         }
     }
@@ -124,7 +123,7 @@ public:
     // Читає буфер повністю або зупиняється на EOF/помилці.
     task<size_t> read_exact(void* buf, size_t len) {
         size_t   total = 0;
-        uint8_t* dst = static_cast<uint8_t*>(buf);
+        uint8_t* dst   = static_cast<uint8_t*>(buf);
 
         while (total < len) {
             auto r = co_await read(dst + total, len - total);
@@ -156,7 +155,7 @@ public:
     // Повторює write, поки весь буфер не буде записано.
     task<void> write_all(const void* buf, size_t len) {
         size_t         written = 0;
-        const uint8_t* src = static_cast<const uint8_t*>(buf);
+        const uint8_t* src     = static_cast<const uint8_t*>(buf);
 
         while (written < len) {
             auto r = co_await write(src + written, len - written);
@@ -178,7 +177,7 @@ public:
     }
 
     // Записує owning-копію std::string, безпечну для async lifetime.
-    task<void> write_str(std::string s) {
+    task<void> write_str(std::string const& s) {
         return write_all(s.data(), s.size());
     }
 
@@ -253,9 +252,9 @@ private:
         int flags = 0;
         bool rd = flag_set(f, OpenFlags::Read);
         bool wr = flag_set(f, OpenFlags::Write)
-            || flag_set(f, OpenFlags::Append);
+               || flag_set(f, OpenFlags::Append);
 
-        if (rd && wr) flags = O_RDWR;
+        if      (rd && wr) flags = O_RDWR;
         else if (wr)       flags = O_WRONLY;
         else               flags = O_RDONLY;
 
@@ -278,6 +277,21 @@ private:
     file_handle_t fd_ = INVALID_FD;
     int64_t    pos_ = 0;
 };
+
+// ── Зручні аліаси для кожної платформи ─────────────────────
+
+// Включається тільки якщо відповідний backend вже включений
+#ifdef IOURINGBACKEND_HPP_INCLUDED
+using AsyncFileLinux = AsyncFile<IouringOp>;
+#endif
+
+#ifdef IOCPBACKEND_HPP_INCLUDED
+using AsyncFileWindows = AsyncFile<IocpOp>;
+#endif
+
+// SyncMockBackend включається завжди для тестів і fallback
+#include "SyncMockBackend.h"
+using AsyncFileSync = AsyncFile<SyncMockOp>;
 
 // ── Файлові утиліти (не залежать від template параметра Op) ─
 namespace async_fs {

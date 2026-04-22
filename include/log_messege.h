@@ -10,7 +10,6 @@ class LM
 public:
     LM();
     ~LM();
-
     fire_and_forget InitLogMesseg(void);
 
     template<typename... Args>
@@ -42,7 +41,7 @@ private:
 
     CLogInit info;
     std::mutex m_mutex;
-    AsyncFileAuto m_file;
+    AsyncFileAuto file;
 };
 
 extern LM	*m_sLog;

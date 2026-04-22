@@ -15,6 +15,7 @@ set(HL2SDK ../../hl2sdk-l4d)
 set(MMSOURCE110 ../../mmsource)
 set(LUA54 ../../lua54)
 set(BREAKPAD ../../break_pad)
+set(URING32 ../../UkrCoop/liburing)
 
 include(src/source.cmake)
 
@@ -46,6 +47,7 @@ include_directories(
     ${MMSOURCE110}/core/sourcehook
     ${LUA54}/include
     ${BREAKPAD}
+    ${URING32}/src/include
 )
 
 # Compiler definitions
@@ -69,6 +71,7 @@ set(STATIC_LIBS
     /home/den/projects/hl2sdk-l4d/lib/linux/tier1_i486.a
     /home/den/projects/hl2sdk-l4d/lib/linux/mathlib_i486.a
     /home/den/projects/lua54/lib32/liblua.a
+    /home/den/projects/UkrCoop/liburing/src/liburing.a
 )
 
 # Shared libraries

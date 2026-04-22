@@ -16,8 +16,8 @@ static tm safe_localtime(const time_t* t)
 
 chat_log::~chat_log()
 {
-    if(m_file.is_open())
-        m_file.close();
+    if(file.is_open())
+        file.close();
 }
 
 // chat_log::InitChatLog() — це асинхронна coroutine fire_and_forget,
@@ -56,7 +56,9 @@ fire_and_forget chat_log::InitChatLog()
 
     auto res = co_await WriteToLog(header);
     if(!res)
+    {
         Msg("Failed to initialize ChatLog: ERROR: %d\n", to_string(res.error()));
+    }
 
     co_return;
 }
@@ -67,7 +69,7 @@ fire_and_forget chat_log::InitChatLog()
 task<bool> chat_log::ChatLogMsgAsync(SourceHook::String message)
 {
     co_await g_ThreadPool.schedule();
-    co_return co_await WriteToLog(message);
+    co_return (co_await WriteToLog(message)).value_or(false);
 }
 
 // Метод chat_log::UpdateFileInfoIfNeeded перевіряє, 
@@ -85,8 +87,10 @@ void chat_log::UpdateFileInfoIfNeeded(const tm* current_time)
             current_time->tm_mon + 1,
             current_time->tm_mday);
 
-        if(m_file.is_open())
-            m_file.close();
+        if(file.is_open())
+        {
+            file.close();
+        }
 
         info.m_NrmFileName.assign(path);
         info.m_NrmCurDay = current_time->tm_mday;
@@ -113,15 +117,12 @@ task<bool> chat_log::WriteToLog(SourceHook::String message)
         need_header = info.m_DailPrinted;
     }
 
-    if(!m_file.is_open())
+    if(!file.is_open())
     {
-        auto open_res = co_await m_file.open(
-            filename.c_str(),
-            OpenFlags::Write | OpenFlags::Append | OpenFlags::Create
-        );
-
-        if (!open_res) {
-            co_return result<bool>::err(open_res.error());
+        auto open_result = co_await file.open(filename.c_str(), OpenFlags::Write | OpenFlags::Append | OpenFlags::Create);
+        if (!open_result)
+        {
+            co_return result<bool>::err(open_result.error());
         }
     }
 
@@ -131,17 +132,14 @@ task<bool> chat_log::WriteToLog(SourceHook::String message)
     if (need_header)
     {
         char header[512];
-        int len = snprintf(header, sizeof(header),
-            "ChatLog log file session started (file \"/logs/CHAT_LOG_%04d%02d%02d.log\") (Version \"%s\")",
-            curtime.tm_year + 1900, 
-            curtime.tm_mon + 1, 
-            curtime.tm_mday, 
-            SMEXT_CONF_VERSION
-        );
-        
-        auto write_res = co_await m_file.write(header, static_cast<size_t>(len));
-        if(!write_res) {
-            co_return result<bool>::err(write_res.error());
+        auto len = snprintf(header, sizeof(header),
+            "L [%s] ChatLog log file session started (file \"/logs/CHAT_LOG_%04d%02d%02d.log\") (Version \"%s\")\n",
+            date, curtime.tm_year + 1900, curtime.tm_mon + 1, curtime.tm_mday, SMEXT_CONF_VERSION);
+
+        auto header_result = co_await file.write(header, len);
+        if (!header_result)
+        {
+            co_return result<bool>::err(header_result.error());
         }
 
         {
@@ -151,16 +149,18 @@ task<bool> chat_log::WriteToLog(SourceHook::String message)
     }
 
     char log_entry[4096];
-    int len = snprintf(log_entry, sizeof(log_entry), "[%s] %s\n", date, message.c_str());
-    auto write_res = co_await m_file.write(log_entry, static_cast<size_t>(len));
-    if(!write_res) {
-        co_return result<bool>::err(write_res.error());
+    int log_len = snprintf(log_entry, sizeof(log_entry), "L [%s] %s\n", date, message.c_str());
+    auto write_result = co_await file.write(log_entry, log_len);
+    if (!write_result)
+    {
+        co_return result<bool>::err(write_result.error());
     }
 
-    auto flush_res = co_await m_file.flush();
-    if(!flush_res) {
-        co_return result<bool>::err(flush_res.error());
+    auto flush_result = co_await file.flush();
+    if (!flush_result)
+    {
+        co_return result<bool>::err(flush_result.error());
     }
 
-    co_return result<bool>::ok(true);
+    co_return true;
 }

@@ -55,6 +55,13 @@ struct IoOp {
 	std::atomic<bool>		submitting{ false };
 	IoBackend*				backend	= nullptr; // встановлюється в prep_*
 
+    // ── I/O параметри (спільні для всіх backend-ів) ─────
+    enum class Type : uint8_t { Read, Write, Fsync } type = Type::Read;
+    int      fd     = -1;
+    void*    buf    = nullptr;
+    size_t   len    = 0;
+    int64_t  offset = 0;
+
 	// Викликається completion thread-ом після завершення операції
 	// Зберігає результат і, за потреби, відновлює continuation.
 	void complete(int32_t res) noexcept {
@@ -90,14 +97,13 @@ struct IoOp {
 	IoResult await_resume() const noexcept { return result; }
 
 	// Запам'ятовує continuation і делегує submit конкретному op-типу.
-	bool await_suspend(std::coroutine_handle<> h) noexcept {
+	void await_suspend(std::coroutine_handle<> h) noexcept {
 		// await_ready повернув false → async режим
 		// handle ще не встановлений → встановлюємо і submit-имо
 		handle = h;
 		submitting.store(true, std::memory_order_release);
 		submit(); // реєструє в ядрі (io_uring SQE або IOCP ReadFile)
 		submitting.store(false, std::memory_order_release);
-		return !ready.load(std::memory_order_acquire);
 	}
 
 protected:

@@ -37,7 +37,7 @@ private:
 
     CLogInit    info;
     std::mutex  m_mutex;
-    AsyncFileAuto m_file;
+    AsyncFileAuto file;
 };
 
 extern chat_log* m_sChatLog;

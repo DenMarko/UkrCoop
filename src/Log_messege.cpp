@@ -28,8 +28,10 @@ LM::LM()
 
 LM::~LM()
 {
-	if(m_file.is_open())
-		m_file.close();
+	if(file.is_open())
+	{
+		file.close();
+	}
 }
 
 // LM::InitLogMesseg() — корутина fire_and_forget,
@@ -57,7 +59,7 @@ fire_and_forget LM::InitLogMesseg(void)
 	snprintf(
 		header, 
 		sizeof(header), 
-		"LogMessege log file session started (file \"logs/UKRCOOP_%04d%02d%02d.log\") (Version \"%s\")", 
+		"LogMessege log file session started (file \"UKRCOOP_%04d%02d%02d.log\") (Version \"%s\")", 
 		curtime.tm_year + 1900, curtime.tm_mon + 1, curtime.tm_mday, SMEXT_CONF_VERSION);
 
 	{
@@ -80,7 +82,7 @@ fire_and_forget LM::InitLogMesseg(void)
 task<bool> LM::LogToFileAsync(bool silent, SourceHook::String message)
 {
 	co_await g_ThreadPool.schedule();
-    co_return co_await WriteToLog(message, silent);
+    co_return (co_await WriteToLog(message, silent)).value_or(false);
 }
 
 // LM::WriteToLog — це корутинна функція, 
@@ -102,16 +104,11 @@ task<bool> LM::WriteToLog(SourceHook::String message, bool silent)
 		need_update = info.m_DailPrinted;
 	}
 
-	if(!m_file.is_open())
+	if(!file.is_open())
 	{
-		auto open_res = co_await m_file.open(
-			filename.c_str(),
-			OpenFlags::Write | OpenFlags::Append | OpenFlags::Create
-		);
-
-		if (!open_res) {
-			co_return result<bool>::err(open_res.error());
-		}
+		auto open_result = co_await file.open(filename.c_str(), OpenFlags::Write | OpenFlags::Append | OpenFlags::Create);
+		if (!open_result)
+			co_return result<bool>::err(open_result.error());
 	}
 
 	char data[64];
@@ -119,18 +116,15 @@ task<bool> LM::WriteToLog(SourceHook::String message, bool silent)
 
 	if(need_update)
 	{
-		char header[512];
-		int len = snprintf(header, sizeof(header),
-			"LogMessege log file session started (file \"logs/UKRCOOP_%04d%02d%02d.log\") (Version \"%s\")",
-			curtime.tm_year + 1900, 
-			curtime.tm_mon + 1, 
-			curtime.tm_mday, 
-			SMEXT_CONF_VERSION
-		);
+        char header[512];
+        auto len = snprintf(header, sizeof(header),
+			"L [%s] LogMessege log file session started (file \"UKRCOOP_%04d%02d%02d.log\") (Version \"%s\")\n",
+			data, curtime.tm_year + 1900, curtime.tm_mon + 1, curtime.tm_mday, SMEXT_CONF_VERSION);
 
-		auto write_res = co_await m_file.write(header, static_cast<size_t>(len));
-		if(!write_res) {
-			co_return result<bool>::err(write_res.error());
+		auto header_result = co_await file.write(header, len);
+		if (!header_result)
+		{
+			co_return result<bool>::err(header_result.error());
 		}
 
 		{
@@ -139,21 +133,24 @@ task<bool> LM::WriteToLog(SourceHook::String message, bool silent)
 		}
 	}
 
+
 	char log_entry[4096];
-	int log_len = snprintf(log_entry, sizeof(log_entry), "L [%s] %s\n", data, message.c_str());
-	auto write_res = co_await m_file.write(log_entry, static_cast<size_t>(log_len));
-	if(!write_res) {
-		co_return result<bool>::err(write_res.error());
+    int log_len = snprintf(log_entry, sizeof(log_entry), "L [%s] %s\n", data, message.c_str());
+	auto write_result = co_await file.write(log_entry, log_len);
+	if (!write_result)
+	{
+		co_return result<bool>::err(write_result.error());
+	}
+
+	auto flush_result = co_await file.flush();
+	if (!flush_result)
+	{
+		co_return result<bool>::err(flush_result.error());
 	}
 
 	if (!silent) g_SMAPI->ConPrintf("[%s] %s\n", data, message.c_str());
 
-	auto flush_res = co_await m_file.flush();
-	if(!flush_res) {
-		co_return result<bool>::err(flush_res.error());
-	}
-
-    co_return result<bool>::ok(true);
+    co_return true;
 }
 
 // LM::UpdateFileInfoIfNeeded — це допоміжна функція, 
@@ -171,8 +168,10 @@ void LM::UpdateFileInfoIfNeeded(const tm *curtime)
 		curtime->tm_mon + 1, 
 		curtime->tm_mday);
 
-		if(m_file.is_open())
-			m_file.close();
+		if(file.is_open())
+		{
+			file.close();
+		}
 
 		info.m_NrmFileName.assign(Path);
 		info.m_NrmCurDay = curtime->tm_mday;

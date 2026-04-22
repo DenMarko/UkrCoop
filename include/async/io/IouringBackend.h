@@ -24,12 +24,6 @@
 class IouringBackend;
 
 struct IouringOp final : IoOp {
-    enum class Type { Read, Write, Fsync } type = Type::Read;
-    file_handle_t fd = static_cast<file_handle_t>(-1);
-    void* buf = nullptr;
-    size_t   len = 0;
-    int64_t  offset = 0;
-
 protected:
     // Делегує submit своєму io_uring backend-у.
     void submit() noexcept override;
@@ -114,70 +108,53 @@ public:
 
     // ── prep ───────────────────────────────────────────────
     // Готує read-операцію для наступного SQE.
-    void prep_read(IoOp* op, file_handle_t fd,
-        void* buf, size_t len, int64_t offset) noexcept override
-    {
-        auto* u = static_cast<IouringOp*>(op);
-        u->backend = this;
-        u->type = IouringOp::Type::Read;
-        u->fd = fd;
-        u->buf = buf;
-        u->len = len;
-        u->offset = offset;
+    void prep_read(IoOp* op, int fd,
+                   void* buf, size_t len, int64_t offset) noexcept override {
+        op->backend = this;
+        op->type    = IoOp::Type::Read;
+        op->fd = fd; op->buf = buf; op->len = len; op->offset = offset;
     }
 
     // Готує write-операцію для наступного SQE.
-    void prep_write(IoOp* op, file_handle_t fd,
-        const void* buf, size_t len, int64_t offset) noexcept override
-    {
-        auto* u = static_cast<IouringOp*>(op);
-        u->backend = this;
-        u->type = IouringOp::Type::Write;
-        u->fd = fd;
-        u->buf = const_cast<void*>(buf);
-        u->len = len;
-        u->offset = offset;
+    void prep_write(IoOp* op, int fd,
+                    const void* buf, size_t len, int64_t offset) noexcept override {
+        op->backend = this;
+        op->type    = IoOp::Type::Write;
+        op->fd = fd; op->buf = const_cast<void*>(buf);
+        op->len = len; op->offset = offset;
     }
 
     // Готує fsync-операцію для наступного SQE.
-    void prep_fsync(IoOp* op, file_handle_t fd) noexcept override {
-        auto* u = static_cast<IouringOp*>(op);
-        u->backend = this;
-        u->type = IouringOp::Type::Fsync;
-        u->fd = fd;
+    void prep_fsync(IoOp* op, int fd) noexcept override {
+        op->backend = this;
+        op->type    = IoOp::Type::Fsync;
+        op->fd = fd; op->buf = nullptr; op->len = 0;
     }
+
 
     // ── submit SQE ─────────────────────────────────────────
     // Заповнює SQE і submit-ить його в ring.
-    void submit_op(IouringOp* op) noexcept {
+    void submit_op(IoOp* op) noexcept override {
         std::lock_guard lock(sq_mtx_);
-
-        struct io_uring_sqe* sqe = io_uring_get_sqe(&ring_);
-        assert(sqe && "SQ full — збільш QUEUE_DEPTH");
+        auto* sqe = io_uring_get_sqe(&ring_);
+        assert(sqe && "SQ full");
 
         switch (op->type) {
-        case IouringOp::Type::Read:
-            io_uring_prep_read(sqe, op->fd,
-                op->buf, static_cast<unsigned>(op->len),
-                static_cast<uint64_t>(op->offset));
-            break;
-        case IouringOp::Type::Write:
-            io_uring_prep_write(sqe, op->fd,
-                op->buf, static_cast<unsigned>(op->len),
-                static_cast<uint64_t>(op->offset));
-            break;
-        case IouringOp::Type::Fsync:
-            io_uring_prep_fsync(sqe, op->fd, 0);
-            break;
+            case IoOp::Type::Read:
+                io_uring_prep_read(sqe, op->fd, op->buf,
+                    (unsigned)op->len, (uint64_t)op->offset);
+                break;
+            case IoOp::Type::Write:
+                io_uring_prep_write(sqe, op->fd, op->buf,
+                    (unsigned)op->len, (uint64_t)op->offset);
+                break;
+            case IoOp::Type::Fsync:
+                io_uring_prep_fsync(sqe, op->fd, 0);
+                break;
         }
 
         io_uring_sqe_set_data(sqe, op);
         io_uring_submit(&ring_);
-    }
-
-    // Адаптер для делегуючих IoOp-типів на кшталт UniOp.
-    void submit_op(IoOp* base) noexcept override {
-        submit_op(static_cast<IouringOp*>(base));
     }
 
     // ── синхронні ──────────────────────────────────────────

@@ -17,6 +17,7 @@
 
 // Єдиний Op-тип, який делегує submit конкретному backend-у.
 struct UniOp final : IoOp {
+protected:
     // Делегує submit вибраному backend-у.
     void submit() noexcept override {
         if(backend) backend->submit_op(this);
