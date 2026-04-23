@@ -63,12 +63,12 @@ public:
     AsyncFile(AsyncFile&& o) noexcept
         : backend_(o.backend_), fd_(o.fd_), pos_(o.pos_)
     {
-        o.fd_  = INVALID_FD;
+        o.fd_  = INVALID_HANDLE;
         o.pos_ = 0;
     }
 
     // Перевіряє, чи файл зараз відкритий.
-    bool is_open() const noexcept { return fd_ != INVALID_FD; }
+    bool is_open() const noexcept { return fd_ != INVALID_HANDLE; }
 
     // ── open ──────────────────────────────────────────────
     // Відкриває файл і ініціалізує поточну позицію доступу.
@@ -79,7 +79,7 @@ public:
         fd_  = backend_.open(path, native, 0644);
         pos_ = 0;
 
-        if (fd_ == INVALID_FD)
+        if (fd_ == INVALID_HANDLE)
             co_return expected<void>::err(error_code::file_open_failed);
 
         if (flag_set(flags, OpenFlags::Append)) {
@@ -98,7 +98,7 @@ public:
     void close() noexcept {
         if (is_open()) {
             backend_.close(fd_);
-            fd_  = INVALID_FD;
+            fd_  = INVALID_HANDLE;
             pos_ = 0;
         }
     }
@@ -271,10 +271,10 @@ private:
         return static_cast<size_t>(p - s);
     }
 
-    static constexpr file_handle_t INVALID_FD = static_cast<file_handle_t>(-1);
+    static constexpr file_handle_t INVALID_HANDLE = static_cast<file_handle_t>(-1);
 
     IoBackend& backend_;
-    file_handle_t fd_ = INVALID_FD;
+    file_handle_t fd_ = INVALID_HANDLE;
     int64_t    pos_ = 0;
 };
 

@@ -34,9 +34,9 @@ public:
     void submit_op(IoOp* op) noexcept override { execute(op); }
     void stop()  noexcept override {}
 
-    int open(const char* path, int flags, int mode) override {
+    file_handle_t open(const char* path, int flags, int mode) override {
 #ifndef _WIN32
-        return ::open(path, flags, mode);
+        return static_cast<file_handle_t>(::open(path, flags, mode));
 #else
         DWORD access = 0, creation = OPEN_EXISTING;
         DWORD share = FILE_SHARE_READ | FILE_SHARE_WRITE;
@@ -46,26 +46,26 @@ public:
         else if (flags & 0x40) creation = OPEN_ALWAYS;
         HANDLE h = CreateFileA(path, access, share, nullptr,
             creation, FILE_ATTRIBUTE_NORMAL, nullptr);
-        return h == INVALID_HANDLE_VALUE ? -1 : (int)(intptr_t)h;
+        return h == INVALID_HANDLE_VALUE ? static_cast<file_handle_t>(-1) : reinterpret_cast<file_handle_t>(h);
 #endif
     }
 
-    void close(int fd) override {
+    void close(file_handle_t fd) override {
 #ifndef _WIN32
-        ::close(fd);
+        ::close(static_cast<int>(fd));
 #else
         CloseHandle((HANDLE)(intptr_t)fd);
 #endif
     }
 
-    void prep_read(IoOp* op, int fd,
+    void prep_read(IoOp* op, file_handle_t fd,
                    void* buf, size_t len, int64_t offset) noexcept override {
         op->backend = this;
         op->type    = IoOp::Type::Read;
         op->fd = fd; op->buf = buf; op->len = len; op->offset = offset;
     }
 
-    void prep_write(IoOp* op, int fd,
+    void prep_write(IoOp* op, file_handle_t fd,
                     const void* buf, size_t len, int64_t offset) noexcept override {
         op->backend = this;
         op->type    = IoOp::Type::Write;
@@ -73,7 +73,7 @@ public:
         op->len = len; op->offset = offset;
     }
 
-    void prep_fsync(IoOp* op, int fd) noexcept override {
+    void prep_fsync(IoOp* op, file_handle_t fd) noexcept override {
         op->backend = this;
         op->type    = IoOp::Type::Fsync;
         op->fd = fd; op->buf = nullptr; op->len = 0;
@@ -121,9 +121,9 @@ public:
         op->complete(res);
     }
 
-    int64_t seek(int fd, int64_t o, int w) noexcept override {
+    int64_t seek(file_handle_t fd, int64_t o, int w) noexcept override {
 #ifndef _WIN32
-        return (int64_t)::lseek(fd, (off_t)o, w);
+        return (int64_t)::lseek(static_cast<int>(fd), (off_t)o, w);
 #else
         LARGE_INTEGER li{}, out{};
         li.QuadPart = o;
@@ -133,19 +133,19 @@ public:
 #endif
     }
 
-    bool truncate(int fd, int64_t s) noexcept override {
+    bool truncate(file_handle_t fd, int64_t s) noexcept override {
 #ifndef _WIN32
-        return ::ftruncate(fd, (off_t)s) == 0;
+        return ::ftruncate(static_cast<int>(fd), (off_t)s) == 0;
 #else
         if (seek(fd, s, 0) < 0) return false;
         return SetEndOfFile((HANDLE)(intptr_t)fd) != 0;
 #endif
     }
 
-    int64_t file_size(int fd) noexcept override {
+    int64_t file_size(file_handle_t fd) noexcept override {
 #ifndef _WIN32
         struct stat st{};
-        return ::fstat(fd, &st) == 0 ? (int64_t)st.st_size : -1;
+        return ::fstat(static_cast<int>(fd), &st) == 0 ? (int64_t)st.st_size : -1;
 #else
         LARGE_INTEGER sz{};
         return GetFileSizeEx((HANDLE)(intptr_t)fd, &sz) ? sz.QuadPart : -1;

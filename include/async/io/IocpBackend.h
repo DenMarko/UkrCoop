@@ -113,7 +113,7 @@ public:
         HANDLE h = CreateFileA(
             path, access, share, nullptr, creation, attr, nullptr);
 
-        if (h == INVALID_HANDLE_VALUE) return -1;
+        if (h == INVALID_HANDLE_VALUE) return static_cast<file_handle_t>(-1);;
 
         // Асоціюємо handle з нашим IOCP портом.
         // Після цього кожне завершення ReadFile/WriteFile
@@ -121,7 +121,7 @@ public:
         HANDLE res = CreateIoCompletionPort(
             h, port_, reinterpret_cast<ULONG_PTR>(h), 0);
 
-        if (!res) { CloseHandle(h); return -1; }
+        if (!res) { CloseHandle(h); return static_cast<file_handle_t>(-1);; }
 
         // Повертаємо HANDLE як int через intptr_t
         return reinterpret_cast<file_handle_t>(h);

@@ -57,10 +57,10 @@ struct IoOp {
 
     // ── I/O параметри (спільні для всіх backend-ів) ─────
     enum class Type : uint8_t { Read, Write, Fsync } type = Type::Read;
-    int      fd     = -1;
-    void*    buf    = nullptr;
-    size_t   len    = 0;
-    int64_t  offset = 0;
+	file_handle_t	fd     = static_cast<file_handle_t>(-1);
+    void*    		buf    = nullptr;
+    size_t   		len    = 0;
+    int64_t  		offset = 0;
 
 	// Викликається completion thread-ом після завершення операції
 	// Зберігає результат і, за потреби, відновлює continuation.
