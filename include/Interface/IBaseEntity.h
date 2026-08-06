@@ -699,6 +699,8 @@ public:
 	void	SetFadeDistance( float minFadeDist, float maxFadeDist );
 	void	SetGlobalFadeScale( float flFadeScale );
 	float	GetGlobalFadeScale() const;
+	void	SetSize(const Vector& vecMin, const Vector& vecMax);
+	void	SetCollisionBounds( const Vector& mins, const Vector &maxs );
 
 public:
 	virtual ~IBaseEntity() { }
@@ -804,7 +806,7 @@ public:
 	virtual bool			CanBeHitByMeleeAttack( CBaseEntity *pAttacker ) = 0;
 	virtual int				OnTakeDamage( const CTakeDamageInfo &info ) = 0;
 	virtual int				TakeHealth( float flHealth, int bitsDamageType ) = 0;
-	virtual bool			IsAlive( void ) = 0;
+	virtual bool			IsAlive( void ) const = 0;
 	virtual void			Event_Killed( const CTakeDamageInfo &info ) = 0;
 	virtual void			Event_KilledOther( CBaseEntity *pVictim, const CTakeDamageInfo &info ) = 0;
 	virtual int				BloodColor( void ) = 0;

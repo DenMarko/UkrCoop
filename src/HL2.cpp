@@ -2457,3 +2457,77 @@ CON_COMMAND(sm_ukr_dump_netprops, "Dumps the networkable property table as a tex
 }
 
 #endif
+
+bool IsBoxIntersectingSphere( const Vector& boxMin, const Vector& boxMax, 
+						const Vector& center, float radius )
+{
+	// See Graphics Gems, box-sphere intersection
+	float dmin = 0.0f;
+	float flDelta;
+
+	// Unrolled the loop.. this is a big cycle stealer...
+	if (center[0] < boxMin[0])
+	{
+		flDelta = center[0] - boxMin[0];
+		dmin += flDelta * flDelta;
+	}
+	else if (center[0] > boxMax[0])
+	{
+		flDelta = boxMax[0] - center[0];
+		dmin += flDelta * flDelta;
+	}
+
+	if (center[1] < boxMin[1])
+	{
+		flDelta = center[1] - boxMin[1];
+		dmin += flDelta * flDelta;
+	}
+	else if (center[1] > boxMax[1])
+	{
+		flDelta = boxMax[1] - center[1];
+		dmin += flDelta * flDelta;
+	}
+
+	if (center[2] < boxMin[2])
+	{
+		flDelta = center[2] - boxMin[2];
+		dmin += flDelta * flDelta;
+	}
+	else if (center[2] > boxMax[2])
+	{
+		flDelta = boxMax[2] - center[2];
+		dmin += flDelta * flDelta;
+	}
+
+	return dmin < radius * radius;
+}
+
+IBaseEntity *HL2::FindEntityByClassnameWithin(IBaseEntity *pStartEntity, const char *szName, const Vector &vecSrc, float flRadius)
+{
+    IBaseEntity *pEntity = pStartEntity;
+    float flMaxDist2 = flRadius * flRadius;
+    if(flMaxDist2 == 0)
+    {
+        return FindEntityByClassName(pEntity, szName);
+    }
+
+    while ((pEntity = FindEntityByClassName(pEntity, szName)) != nullptr)
+    {
+        if(!pEntity->edict() && !pEntity->IsEFlagSet(EFL_SERVER_ONLY))
+            continue;
+
+        Vector vecRelativeCenter;
+        pEntity->CollisionProp()->WorldToCollisionSpace(vecSrc, &vecRelativeCenter);
+        if(IsBoxIntersectingSphere(
+            pEntity->CollisionProp()->OBBMins(),
+            pEntity->CollisionProp()->OBBMaxs(),
+            vecRelativeCenter, flRadius
+        ))
+        {
+            return pEntity;
+        }
+    }
+    
+
+    return nullptr;
+}

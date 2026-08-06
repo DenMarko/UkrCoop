@@ -366,5 +366,29 @@ bool CTraceFilterChain::ShouldHitEntity( IHandleEntity *pHandleEntity, int conte
 bool VisionTraceFilterFunction(IHandleEntity *pServerEntity, int contentsMask)
 {
 	IBaseEntity *entity = GetEntityFromEntityHandle( pServerEntity );
-	return ( entity->MyCombatCharacterPointer() == NULL && entity->BlocksLOS() );
+	return ( entity->MyNextBotPointer() == NULL && !entity->IsPlayer() && entity->BlocksLOS() );
+}
+
+CTraceFilterSimplesList::CTraceFilterSimplesList(int collisionGroup) :
+	CTraceFilterSimples(NULL, collisionGroup)
+{
+}
+
+bool CTraceFilterSimplesList::ShouldHitEntity(IHandleEntity *pHandleEntity, int contentsMask)
+{
+	if(m_PassEntities.Find(pHandleEntity) != m_PassEntities.InvalidIndex())
+		return false;
+
+    return CTraceFilterSimples::ShouldHitEntity(pHandleEntity, contentsMask);
+}
+
+void CTraceFilterSimplesList::AddEntityToIgnore(IHandleEntity *pEntity)
+{
+	m_PassEntities.AddToTail(pEntity);
+}
+
+void CTraceFilterSimplesList::AddEntitiesToIgnore(int nCount, IHandleEntity **ppEntities)
+{
+	int nIndex = m_PassEntities.AddMultipleToTail(nCount);
+	memcpy(&m_PassEntities[nIndex], ppEntities, nCount * sizeof(IHandleEntity*));
 }

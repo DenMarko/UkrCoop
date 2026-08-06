@@ -1819,3 +1819,21 @@ float IBaseEntity::GetGlobalFadeScale() const
 {
     return m_flFadeScale;
 }
+
+void IBaseEntity::SetSize(const Vector &vecMin, const Vector &vecMax)
+{
+    for(int i = 0; i < 3; i++)
+    {
+        if(vecMin[i] > vecMax[i])
+        {
+            Error("%s: backwards mins/maxs", GetDebugName() );
+        }
+    }
+
+    SetCollisionBounds(vecMin, vecMax);
+}
+
+void IBaseEntity::SetCollisionBounds(const Vector &mins, const Vector &maxs)
+{
+    m_Collision.SetCollisionBounds(mins, maxs);
+}

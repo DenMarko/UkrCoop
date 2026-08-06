@@ -613,3 +613,78 @@ void UTIL_ScreenFade(IBaseEntity *pEntity, const color32 &color, float fadeTime,
 	UTIL_ScreenFadeBuild( fade, color, fadeTime, fadeHold, flags );
 	UTIL_ScreenFadeWrite( fade, pEntity );
 }
+
+inline float ComputeShakeAmplitude( const Vector &center, const Vector &shakePt, float amplitude, float radius )
+{
+	if ( radius <= 0 )
+		return amplitude;
+
+	float localAmplitude = -1;
+	Vector delta = center - shakePt;
+	float distance = delta.Length();
+
+	if ( distance <= radius )
+	{
+		// Make the amplitude fall off over distance
+		float flPerc = 1.0 - (distance / radius);
+		localAmplitude = amplitude * flPerc;
+	}
+
+	return localAmplitude;
+}
+
+inline void TransmitShakeEvent( IBasePlayer *pPlayer, float localAmplitude, float frequency, float duration, ShakeCommand_t eCommand )
+{
+	if (( localAmplitude > 0 ) || ( eCommand == SHAKE_STOP ))
+	{
+		if ( eCommand == SHAKE_STOP )
+			localAmplitude = 0;
+
+		CSingleUserRecipientFilter user( pPlayer );
+		user.MakeReliable();
+		CUserMessage *pUMsg = new CUserMessage( user, "Shake" );
+		pUMsg->MsgWriteByte( eCommand );				// shake command (SHAKE_START, STOP, FREQUENCY, AMPLITUDE)
+		pUMsg->MsgWriteFloat( localAmplitude );			// shake magnitude/amplitude
+		pUMsg->MsgWriteFloat( frequency );				// shake noise frequency
+		pUMsg->MsgWriteFloat( duration );				// shake lasts this long
+		delete pUMsg;
+	}
+}
+
+const float MAX_SHAKE_AMPLITUDE = 16.0f;
+void UTIL_ScreenShake( const Vector &center, float amplitude, float frequency, float duration, float radius, ShakeCommand_t eCommand, bool bAirShake, CUtlVector<CBasePlayer *> *ignore )
+{
+	int			i;
+	float		localAmplitude;
+
+	if ( amplitude > MAX_SHAKE_AMPLITUDE )
+	{
+		amplitude = MAX_SHAKE_AMPLITUDE;
+	}
+	for ( i = 1; i <= g_pGlobals->maxClients; i++ )
+	{
+		IBaseEntity *pPlayer = GetVirtualClass<IBaseEntity>( i );
+
+		//
+		// Only start shakes for players that are on the ground unless doing an air shake.
+		//
+		if ( !pPlayer || (!bAirShake && (eCommand == SHAKE_START) && !(pPlayer->GetFlags() & FL_ONGROUND)) )
+		{
+			continue;
+		}
+
+		if(ignore && ignore->HasElement((CBasePlayer*)pPlayer))
+		{
+			continue;
+		}
+
+		localAmplitude = ComputeShakeAmplitude( center, pPlayer->WorldSpaceCenter(), amplitude, radius );
+
+		// This happens if the player is outside the radius, in which case we should ignore 
+		// all commands
+		if (localAmplitude < 0)
+			continue;
+
+		TransmitShakeEvent( (IBasePlayer *)pPlayer, localAmplitude, frequency, duration, eCommand );
+	}
+}

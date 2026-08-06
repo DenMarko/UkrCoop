@@ -8,7 +8,7 @@ void IInfected::Vocalize(const char *szVocalise, bool bValue)
     if(muteInfected.GetBool())
         return;
 
-    if(!m_vocaliseTimer.IsElapsed())
+    if(!bValue && !m_vocaliseTimer.IsElapsed())
         return;
     
     static ConVarRef zombieMobMax("z_mob_spawn_max_size");

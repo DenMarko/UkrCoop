@@ -32,6 +32,19 @@ private:
 	ShouldHitFunc_t m_pExtraShouldHitCheckFunction;
 };
 
+class CTraceFilterSimplesList : public CTraceFilterSimples
+{
+public:
+	CTraceFilterSimplesList( int collisionGroup );
+	virtual bool ShouldHitEntity( IHandleEntity *pHandleEntity, int contentsMask );
+
+	void	AddEntityToIgnore( IHandleEntity *pEntity );
+	void	AddEntitiesToIgnore( int nCount, IHandleEntity **ppEntities );
+
+protected:
+	CUtlVector<IHandleEntity*>	m_PassEntities;
+};
+
 class CTraceFilterNoNPC_OrPlayer : public CTraceFilterSimples
 {
 public:

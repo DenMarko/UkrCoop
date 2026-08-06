@@ -90,3 +90,7 @@ Thumbs.db
 *.bak
 *.swp
 *.swo
+
+# IDE specific directories
+.claude/
+resources/

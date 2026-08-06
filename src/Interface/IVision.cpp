@@ -249,6 +249,7 @@ void IVision::UpdateRecognizedSet(void)
 		if(!info->hEntity.IsValid())
 		{
 			m_knownEntityVector.Remove(i);
+			--i;
 			continue;
 		}
 
@@ -256,6 +257,7 @@ void IVision::UpdateRecognizedSet(void)
 		if(!pEntity)
 		{
 			m_knownEntityVector.Remove(i);
+			--i;
 			continue;
 		}
 

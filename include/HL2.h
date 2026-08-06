@@ -393,6 +393,7 @@ public:
     virtual void OnSpawnITMob(int mobSize) = 0;
     virtual void OnMobRash(void) = 0;
     virtual IBaseEntity* FindEntityByClassName(IBaseEntity* pEnt, const char *nameCalss) = 0;
+    virtual IBaseEntity* FindEntityByClassnameWithin(IBaseEntity *pStartEntity, const char *szName, const Vector &vecSrc, float flRadius) = 0;
     virtual IBaseEntity* FindEntityByName(IBaseEntity* pStartEntity, const char* szName, IBaseEntity* pSearchEntity = nullptr, IBaseEntity *pActivator = nullptr, IBaseEntity *pCaller = nullptr, IEntityFindFilter *pFilter = nullptr) = 0;
     virtual IBaseEntity* FindEntityGeneric( IBaseEntity *pStartEntity, const char *szName, IBaseEntity *pSearchingEntity = nullptr, IBaseEntity *pActivator = nullptr, IBaseEntity *pCaller = nullptr ) = 0;
     virtual IBaseEntity* FindEntityByClassNameNearest(const char*zsName, const Vector& vecSrc, float flRadius) = 0;
@@ -598,6 +599,7 @@ public:
     virtual void OnSpawnITMob(int mobSize);
     virtual void OnMobRash();
     virtual IBaseEntity* FindEntityByClassName(IBaseEntity* pEnt, const char *nameCalss);
+    virtual IBaseEntity* FindEntityByClassnameWithin(IBaseEntity *pStartEntity, const char *szName, const Vector &vecSrc, float flRadius);
     virtual IBaseEntity* FindEntityByClassNameNearest(const char*zsName, const Vector& vecSrc, float flRadius);
 
     virtual void UnReserveLobby();

@@ -33,8 +33,8 @@ public:
 
 	virtual void Spawn( void ) = 0;
 	virtual void Precache( void ) = 0;
-	virtual void Activate( void ) = 0;
 	virtual bool KeyValue( const char *szKeyName, const char *szValue ) = 0;
+	virtual void Activate( void ) = 0;
 	// void CalculateBlockLOS( void );
 	// int  ParsePropData( void );
 	
@@ -90,6 +90,7 @@ public:
 	virtual void		SetDmgModBullet( float flDmgMod ) = 0;
 	virtual void		SetDmgModClub( float flDmgMod ) = 0;
 	virtual void		SetDmgModExplosive( float flDmgMod ) = 0;
+	virtual void 		SetDmgModFire( float flDmgMod ) = 0;
 	virtual float		GetDmgModBullet( void ) = 0;
 	virtual float		GetDmgModClub( void ) = 0;
 	virtual float		GetDmgModExplosive( void ) = 0;
@@ -219,6 +220,7 @@ public:
     virtual void		                SetDmgModBullet( float flDmgMod ) = 0;
 	virtual void		                SetDmgModClub( float flDmgMod ) = 0;
 	virtual void		                SetDmgModExplosive( float flDmgMod ) = 0;
+	virtual void 						SetDmgModFire( float flDmgMod ) = 0;
 	virtual float		                GetDmgModBullet( void ) = 0;
 	virtual float		                GetDmgModClub( void ) = 0;
 	virtual float		                GetDmgModExplosive( void ) = 0;
@@ -357,7 +359,7 @@ class IDynamicProp : public IBreakableProp, public IPositionWatcher
 	DECLARE_CLASS( IDynamicProp, IBreakableProp );
 
 public:
-    virtual ~IDynamicProp() {}
+    virtual ~IDynamicProp() { }
 
 	virtual ServerClass*                GetServerClass(void) = 0;
 	virtual int							YouForgotToImplementOrDeclareServerClass(void) = 0;

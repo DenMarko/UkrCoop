@@ -48,12 +48,12 @@ public:
 	virtual bool        	IsLookingAt( const Vector &pos, float cosTolerance = 0.95f ) const;
 	virtual bool        	IsLookingAt( const CBaseCombatCharacter *actor, float cosTolerance = 0.95f ) const;
 
+	template<typename T> bool ForEachRecognized(T& func);
+
 private:
 	void UpdateRecognizeEntitys( void );
 	void UpdateRecognizedSet( void );
 	void CollectPotentiallyVisibleEntities( CUtlVector<IBaseEntity*> *potentialVisible);
-
-	template<typename T> bool ForEachRecognized(T& func);
 
     struct RecognizeInfo
     {

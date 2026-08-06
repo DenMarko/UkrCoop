@@ -294,14 +294,14 @@ void ITerrorPlayer::OnStaggered(IBaseEntity *pAttacker, const Vector *forceDirec
                 }
             }
 
-            m_hStaggerAttacker = NULL;
-            if(pAttacker)
+            IBaseCombatCharacter* pCharact = nullptr;
+            if(pAttacker && (pCharact = (IBaseCombatCharacter*)pAttacker->MyCombatCharacterPointer()) != nullptr)
             {
-                IBaseCombatCharacter* pCharact = (IBaseCombatCharacter*)pAttacker->MyCombatCharacterPointer();
-                if(pCharact != nullptr)
-                {
-                    m_hStaggerAttacker = pCharact->GetRefEHandle();
-                }
+                m_hStaggerAttacker = pCharact->GetRefEHandle();
+            }
+            else
+            {
+                m_hStaggerAttacker.Term();
             }
 
             m_Timer.Start(3.0f);
@@ -349,7 +349,7 @@ void ITerrorPlayer::OnStaggered(IBaseEntity *pAttacker, const Vector *forceDirec
                     m_staggerDist = z_tank_max_stagger_distance.GetFloat();
                 }
             }
-            else if(GetTeamNumber() == 2)
+            else /*if(GetTeamNumber() == 2)*/
             {
                 static ConVarRef survivor_max_tongue_stagger_duration("survivor_max_tongue_stagger_duration");
                 static ConVarRef survivor_max_tongue_stagger_distance("survivor_max_tongue_stagger_distance");
