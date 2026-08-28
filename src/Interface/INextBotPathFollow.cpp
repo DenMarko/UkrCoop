@@ -1162,7 +1162,12 @@ bool IPathFollower::CheckProgress(INextBot *bot)
 					break;
 				}
 
-				if ( nextSegment->pos.z > myFeet.z + mover->GetStepHeight() )
+				/*if ( nextSegment->pos.z > myFeet.z + mover->GetStepHeight() )
+				{
+					break;
+				}*/
+
+				if ( DotProduct( mover->GetMotionVector(), nextSegment->forward ) <= 0.1f )
 				{
 					break;
 				}

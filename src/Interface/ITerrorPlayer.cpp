@@ -1407,6 +1407,7 @@ void ITerrorPlayer::AbilityDebug(ITerrorPlayer *pVictim, const char *msg, ...)
     {
         va_start(v, msg);
         Q_vsnprintf(v6, 0x1000, msg, v);
+        va_end(v);
         pAbility->AbilityDebug((CTerrorPlayer*)pVictim, v6);
     }
 }

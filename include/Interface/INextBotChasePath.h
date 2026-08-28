@@ -170,7 +170,7 @@ inline void IChasePath::RefreshPath(INextBot *bot, IBaseEntity *subject, const I
 			pathTarget = pPredictedSubjectPos ? *pPredictedSubjectPos : PredictSubjectPosition( bot, subject );
 			isPath = Compute( bot, pathTarget, cost, GetMaxPathLength() );
 		}
-		else if ( reinterpret_cast<IBaseEntity*>(subject)->MyCombatCharacterPointer() && reinterpret_cast<IBaseCombatCharacter*>(reinterpret_cast<IBaseEntity*>(subject)->MyCombatCharacterPointer())->GetLastKnownArea() )
+		else if ( reinterpret_cast<IBaseEntity*>(subject)->MyCombatCharacterPointer())
 		{
 			isPath = Compute( bot, reinterpret_cast<IBaseEntity*>(subject)->MyCombatCharacterPointer(), cost, GetMaxPathLength() );
 		}
