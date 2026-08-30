@@ -1172,7 +1172,8 @@ bool IPathFollower::CheckProgress(INextBot *bot)
 					break;
 				}
 
-				if ( mover->IsPotentiallyTraversable( myFeet, nextSegment->pos ) && !mover->HasPotentialGap( myFeet, nextSegment->pos ) )
+				if ( mover->IsPotentiallyTraversable( myFeet, nextSegment->pos ) &&
+					!mover->HasPotentialGap( myFeet, nextSegment->pos ) )
 				{
 					pSkipToGoal = nextSegment;
 				}
